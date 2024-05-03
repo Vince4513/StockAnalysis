@@ -1,22 +1,105 @@
 import os
+import json
 import tabula 
-from tqdm import tqdm
+import pandas as pd
+from datetime import datetime
 
-os.chdir(r"C:\diskD\6 - CODE\StockAnalysis\pdf")
-for file in os.listdir():
-    tables = tabula.read_pdf(file, pages="all")
-    print("\nNombres de Dataframes extraits:", len(tables))
+def df_info(df: pd.DataFrame, message: str = "Data"):
+    print(f"---------- {message} ----------")
+    print("Shape:", df.shape)
+    print(df.info(verbose=False, memory_usage=True))
+    print(df)
+
+def extraction_pdf_to_pandas(path: str) -> list[list[pd.DataFrame]]:
+    os.chdir(path)
+    dataframe_pdfs = []
+    for file in os.listdir():
+        if file.endswith(".pdf"):
+            tables = tabula.read_pdf(file, pages="all")
+            print(type(tables))
+            dataframe_pdfs.append(tables)
     
-    for i in tqdm(range(0, len(tables))):
-        df = tables[i]
-        # print(f"Dataframe {i}:\n", df, "\n")
-        
-        dataframes_filtres = []
-        # Vérifier si au moins une colonne contient le string recherché
-        if any(df.map(lambda x: isinstance(x, str) and 'actifs courants' in x).any()):
-            # Ajouter le DataFrame filtré à la liste des DataFrames filtrés
-            dataframes_filtres.append(df)
+    return dataframe_pdfs
 
-    # Faire quelque chose avec les DataFrames filtrés
-    # Par exemple, afficher le nombre de DataFrames filtrés
-    print("Nombre de DataFrames filtrés :", len(dataframes_filtres))
+def extraction_pdf_to_json(path: str) -> None:
+    os.chdir(path)
+    for file in os.listdir():
+        time = datetime.today()
+        time_s = time.strftime("%Y_%m_%d")
+        if file.endswith(".pdf"):
+            tabula.convert_into(file, f"{time_s}_{file}.json", output_format="json", pages="all")
+
+def read_json(path: str) -> pd.DataFrame:
+    os.chdir(path)
+    for file in os.listdir():
+        if file.endswith(".json"):
+            with open(file, "r") as f:
+                data = json.load(f)
+    
+    return data
+
+def extract_from_df(df: pd.DataFrame):
+    df_info(df, "Extract")
+    # Assuming df is your DataFrame and strings is a list of strings you want to search for
+    lookup_word = ['dette nette', 'actifs courants', 'passifs courants']
+
+    # Iterate over the rows and print the values
+    for index, row in df.iterrows():
+        print(f"Row {index}: {type(row.values)}")
+
+        # Create a boolean mask for each string
+        for r in row.values:
+            if isinstance(r, str):
+                mask = [word in r.lower() for word in lookup_word]
+                print(mask)
+
+    # Use the boolean mask to filter the DataFrame
+    result = df[mask]
+
+    # Print the filtered DataFrame
+    print(result)
+
+def test():
+    words = ['dettes', 'million']
+    rows = ["les dettes se comptent en millions", "la patate", "voiture en panne"]
+    for r in rows:
+        sel = [w in r for w in words]
+        print(sel)
+
+def main() -> None:
+    current_dir = r"C:\diskD\6 - CODE\StockAnalysis\pdf"
+
+    # extraction_pdf_to_json(current_dir)
+    # dfs = read_json(current_dir)
+    dfs_pdfs = extraction_pdf_to_pandas(current_dir)
+    df = dfs_pdfs[0][38]
+    print(df)
+    extract_from_df(df)
+
+if __name__ == "__main__":
+    main()
+    # test()
+
+    # tables = tabula.read_pdf(file, pages="all")
+    # print("\nNombres de Dataframes extraits:", len(tables))
+    # dataframes_filtres = []
+
+    # for i in tqdm(range(0, len(tables))):
+    #     df = tables[i]
+    #     print(f"Dataframe {i}:\n", df, "\n")
+        
+    #     # Vérifier si au moins une colonne contient le string recherché
+    #     if any(df.map(lambda x: isinstance(x, str) and 'actifs courants' in x).any()):
+    #         # Ajouter le DataFrame filtré à la liste des DataFrames filtrés
+    #         dataframes_filtres.append(df)
+
+    # # Faire quelque chose avec les DataFrames filtrés
+    # # Par exemple, afficher le nombre de DataFrames filtrés
+    # print("Nombre de DataFrames filtrés :", len(dataframes_filtres))
+
+    # df = tables[38]
+    # print(df)
+    # if any(df.map(lambda x: isinstance(x, str) and 'actifs courants' in x).any()):
+    #         # Ajouter le DataFrame filtré à la liste des DataFrames filtrés
+    #         dataframes_filtres.append(df)
+    
