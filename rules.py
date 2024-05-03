@@ -6,7 +6,7 @@ share_actual_price = [25, 25, 20]
 
 # Define sample data for multiple companies
 data = {
-    'Company': ['Company A', 'Company B', 'Company C'],
+    'Company': ['Orange', 'Total', 'Nexity'],
     'Sales': [1000000, 1500000, 800000],
     'Current assets': [500000, 700000, 400000],
     'Current liabilities': [200000, 300000, 250000],
