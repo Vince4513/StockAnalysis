@@ -52,3 +52,6 @@ In google, type:
 1. [company name] financial results :pdf
 Depends on the company website:
 2. on the website, Annual results -> FY [year] 
+
+## Documentation
+[Medium Context](https://medium.com/@aguimarneto/python-stock-price-apis-e67d5310f6e3)

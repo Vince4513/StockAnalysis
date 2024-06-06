@@ -58,7 +58,6 @@ def main():
 
     Rule = Rules(share_actual_price)
     Rule.determine_rules(df)
-    # print(Rule)
     print(Rule)
 
 if __name__ == "__main__":
