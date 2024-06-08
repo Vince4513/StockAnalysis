@@ -17,16 +17,21 @@ class StockDataImporter:
 
     def retrieve_data(self):
         aggs = []
-        for a in self.client.get_grouped_daily_aggs("2024-06-01"):
-            print("Ticker:\n", a)
+        for a in self.client.get_grouped_daily_aggs(
+            date="2023-06-08",
+            adjusted=True,
+            raw=False,
+            market_type="stocks"):
+
+            print(a)
             aggs.append(a)   
-        
-        print("\nAggregation:\n", aggs)
+                        
 
 
         # self.client.get_snapshot_all(
 
         # )
+
 
         # self.client.get_snapshot_ticker(
 
