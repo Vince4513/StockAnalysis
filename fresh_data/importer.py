@@ -25,32 +25,6 @@ class StockDataImporter:
 
             print(a)
             aggs.append(a)   
-                        
-
-
-        # self.client.get_snapshot_all(
-
-        # )
-
-
-        # self.client.get_snapshot_ticker(
-
-        # )
-
-        # self.client.list_tickers()
-
-        # aggs = []
-        # for a in self.client.list_aggs(
-        #     "AAPL",
-        #     1,
-        #     "day",
-        #     "2019-01-01",
-        #     "2023-02-16",
-        #     limit=50000,
-        # ):
-        #     aggs.append(a)
-
-        # print(aggs)
     # End def retrieve_data
 
 # End class StockDataImporter
