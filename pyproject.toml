@@ -11,6 +11,7 @@ numpy = "^1.26.4"
 pandas = "^2.2.2"
 setuptools = "^70.0.0"
 polygon-api-client = "^1.13.7"
+yfinance = "^0.2.40"
 
 
 [build-system]

@@ -4,8 +4,12 @@ Retrieve the current share price and the financial results pdf of companies we w
 
 
 ## Plan 
-1. Webscraping 
-    - [ ] Current Share price
+1. API Yahoo finance  
+How to find all the PARIS tickers ? 
+    - [x] Current Share price
+    - [x] Number of shares issued (Nombres de titres émis) 
+    - [ ] Bilan comptable  
+    - [x] compte de résultat
     - [ ] Financial results PDF
 2. PDF data Extraction
     - Sales (CA)
@@ -54,4 +58,6 @@ Depends on the company website:
 2. on the website, Annual results -> FY [year] 
 
 ## Documentation
-[Medium Context](https://medium.com/@aguimarneto/python-stock-price-apis-e67d5310f6e3)
+[Medium Context](https://medium.com/@aguimarneto/python-stock-price-apis-e67d5310f6e3)  
+[YAHOO Market Place](https://fr.aide.yahoo.com/kb/SLN2310.html#/)  
+[Documentation & Code - yfinance](https://github.com/ranaroussi/yfinance/tree/main)  
