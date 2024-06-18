@@ -2,18 +2,59 @@
 """
 Main file calling classes 
 """
-
-import os 
+import sys
+import logging 
 import numpy as np
 import pandas as pd
 
 from rules.rules import Rules
 from fresh_data.importer import StockDataImporter
+from extraction.extraction import Extraction
 
 def main():
-    data = StockDataImporter()
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    
+    # Tickers to analyze
+    tickers = ['TTE.PA', 'MC.PA', 'SU.PA', 'AI.PA']
 
-    data.retrieve_data()
+    # Retrieve data with yfinance
+    data = StockDataImporter()
+    data.retrieve_data(tickers)
+    
+    e = Extraction(tickers_info=data.tickers_info, 
+                   balance_sheets=data.balance_sheets)
+    e.extract_all()
+    
+    print(e.current_assets)
+    # Save all balance sheets to csv 
+    
+    # Keep only intersting rows
+
+    # Connect to Rules module
+
+    # 
+
+    # words_to_find = [
+    #     'Sales',
+    #     'Current Assets', #
+    #     'Other Current Assets', #
+    #     'Long Term Debt' #
+    #     'Current Liabilities', #
+    #     'Other Current Liabilities', #
+    #     'Net income',
+    #     'Dividends',
+    #     'Net earnings per share',
+    #     'Stockholders Equity', #'Shareholders equity',
+    #     'Goodwill And Other Intangible Assets' #
+    # ]
+    
+    # print(type(data.balance_sheets['TTE.PA']))
+
+    # df = data.balance_sheets['TTE.PA']
+    # df.to_csv("out.csv", index=True)
+    
+    # found_words = [w for w in words_to_find if any(w in text for text in list(data.balance_sheets['TTE.PA'].index))]
+    # print(found_words)
     # share_actual_price = [25, 25, 20]
 
     # # Define sample data for multiple companies
