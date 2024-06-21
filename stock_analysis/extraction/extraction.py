@@ -10,7 +10,7 @@ import pandas as pd
 from typing import Iterator
 from datetime import datetime
 
-from stock_analysis.fresh_data.company import Company
+from fresh_data.company import Company
 
 # ===========================================================================
 # Constant and global variables
@@ -45,24 +45,25 @@ class Extraction:
 
     def extract_all(self) -> Iterator[Company]:
         # Extract data to company class
-        for key in self.balance_sheets:
-            logger.debug(f"Dataframe:\n{self.balance_sheets[key]}")
+        for company in self.balance_sheets:
+            logger.debug(f"Dataframe:\n{self.balance_sheets[company]}")
 
             company = Company(
-                actual_share_price = 1,
+                name = company,
+                actual_share_price = self.tickers_info[company]['share'],
                 sales              = self.__extract_sales(),
-                nb_shares_issued   = self.__extract_nb_shares_issued(key),
+                nb_shares_issued   = self.tickers_info[company]['nb_shares'],
 
                 # Balance sheet information
-                current_assets      = self.__extract_current_assets(self.balance_sheets[key]),
-                current_liabilities = self.__extract_current_liabilities(self.balance_sheets[key]), 
-                financial_debts     = self.__extract_long_term_debt(self.tickers_info[key]),
-                equity              = self.__extract_equity(self.balance_sheets[key]),
-                intangible_assets   = self.__extract_goodwill(self.balance_sheets[key]), 
+                current_assets      = self.__extract_current_assets(self.balance_sheets[company]),
+                current_liabilities = self.__extract_current_liabilities(self.balance_sheets[company]), 
+                financial_debts     = self.__extract_long_term_debt(self.tickers_info[company]),
+                equity              = self.__extract_equity(self.balance_sheets[company]),
+                intangible_assets   = self.__extract_goodwill(self.balance_sheets[company]), 
 
                 # Arrays
                 net_income=0,
-                dividends=0,   
+                dividends=self.tickers_info[company]['dividends'],   
                 net_earning_per_share=0
             )
 
@@ -78,14 +79,8 @@ class Extraction:
     # Private Methods
     # ===========================================================================
 
-    def __extract_sales(self, df: pd.DataFrame) -> pd.DataFrame:
-        try:
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc['Sales']
-
-        except Exception as e:
-            result = None
-        return result
+    def __extract_sales(self) -> None:
+        pass
     # End def __extract_sales
 
     def __extract_current_assets(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -122,10 +117,6 @@ class Extraction:
         except Exception as e:
             result = None
         return result
-    # End def __extract_long_term_debt
-
-    def __extract_nb_shares_issued(self, company: str) -> int:
-        return self.tickers_info[company]['nb_shares']
     # End def __extract_long_term_debt
 
     def __extract_equity(self, df: pd.DataFrame) -> pd.DataFrame:

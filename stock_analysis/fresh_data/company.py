@@ -26,7 +26,7 @@ class Company:
 
     def __init__(self, **kwargs) -> None:
         # metadata
-        self.name : str = kwargs.get('name', None)
+        self.name : str | None = kwargs.get('name', None)
         self.last_update: datetime | None = datetime.now()
 
         # Ticket info
@@ -52,16 +52,16 @@ class Company:
     # ===========================================================================
 
     def __str__(self):
-        return f"Company({self.name}: {self.last_update} - {self.actual_share_price}€)"
+        return f"Company({self.name}: {self.last_update} - {self.actual_share_price:.2f}€)"
 
     # ===========================================================================
     # Accessors
     # ===========================================================================
 
-    @property
-    def name(self) -> np.ndarray:
-        return self.name
-    # End def name
+    # @property
+    # def name(self) -> np.ndarray:
+    #     return self.name
+    # # End def name
 
     # ===========================================================================
     # Public Methods
