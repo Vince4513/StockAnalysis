@@ -12,24 +12,18 @@ from fresh_data.importer import StockDataImporter
 from extraction.extraction import Extraction
 
 def main():
+    db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     
     # Tickers to analyze --------------------------
     tickers = ['TTE.PA', 'MC.PA', 'SU.PA', 'AI.PA']
 
     # Retrieve data with yfinance -----------------
-    data = StockDataImporter()
+    data = StockDataImporter(db_path)
     data.retrieve_data(tickers)
         
-    # Save all balance sheets to csv --------------
-    
-    # Keep only intersting rows -------------------
-    e = Extraction(tickers_info=data.tickers_info, 
-                   balance_sheets=data.balance_sheets)
-    
-    for index, company in enumerate(e.extract_all()):
-        print(f"{index} - {company}")
-    
+    # Save all balance sheets to a database -------
+    data.to_database()    
     
     # Connect to Rules module ---------------------
     # share_actual_price = [25, 25, 20]

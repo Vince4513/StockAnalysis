@@ -27,7 +27,7 @@ class Company:
     def __init__(self, **kwargs) -> None:
         # metadata
         self.name : str | None = kwargs.get('name', None)
-        self.last_update: datetime | None = datetime.now()
+        self.last_update: datetime | None = kwargs.get('last_update', datetime.now())
 
         # Ticket info
         self.actual_share_price  : float | None = kwargs.get('actual_share_price', None)

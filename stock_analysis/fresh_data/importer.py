@@ -8,6 +8,10 @@ from __future__ import annotations
 import logging
 import pandas as pd
 import yfinance as yf
+from pathlib import Path
+
+from extraction.extraction import Extraction
+from fresh_data.storage import CompanyStorage
 
 # ===========================================================================
 # Constant and global variables
@@ -22,19 +26,15 @@ logger = logging.getLogger(__name__)
 class StockDataImporter:
     """Import the data from Internet"""
 
-    def __init__(self) -> None:
+    def __init__(self, db_path: str | Path) -> None:
+        
+        self.datastore = CompanyStorage(db_path)
+        self.datastore.clear()
+
+        # API info
         self.tickers_info = None
         self.balance_sheets = None
     # End def __init__
-
-    # ===========================================================================
-    # Properties
-    # ===========================================================================
-
-    # @property
-    # def balance_sheets(self) -> list[dict]:
-    #     return self.balance_sheets
-
 
     # ===========================================================================
     # Public methods
@@ -71,40 +71,22 @@ class StockDataImporter:
         self.balance_sheets = bs
     # End def retrieve_data
     
-    def extract_data(self, balance_sheets: dict[pd.DataFrame]):
-        for key in balance_sheets:
-            logger.debug(f"Dataframe:\n{balance_sheets[key]}")
+    def to_database(self):
+        e = Extraction(
+            tickers_info   = self.tickers_info, 
+            balance_sheets = self.balance_sheets
+        )
+    
+        for index, company in enumerate(e.extract_all()):
+            self.datastore.add_company(company)
+            print(f"{index} - {company}")
+        # End for index, company
 
-            p = self.__extract_from_balance_sheet(balance_sheets[key])
-            logger.info(f"\n{p}\n")
+        n_company = len(self.datastore)
+        print(f"Imported {n_company} companies.")
+    # End def to_database        
+
     # ===========================================================================
     # Private methods
-    # ===========================================================================
-
-    def __extract_from_balance_sheet(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Assuming df is your DataFrame and strings is a list of strings you want to search for
-        lookup_index = [
-            # 'Sales',
-            'Current Assets', #
-            'Other Current Assets', #
-            'Long Term Debt', #
-            'Current Liabilities', #
-            'Other Current Liabilities', #
-            # 'Net Income',
-            # 'Dividends',
-            # 'Net Earnings per Share',
-            'Stockholders Equity', #'Shareholders equity',
-            'Goodwill And Other Intangible Assets' #
-        ]
-
-        try:
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc[lookup_index]
-            
-            return result
-        
-        except Exception as e:
-            print(e)
-    # End def __extract_from_balance_sheet
-    
+    # ===========================================================================    
 # End class StockDataImporter
