@@ -2,6 +2,13 @@
 Retrieve the current share price and the financial results pdf of companies we want more knowledge on. That way we can select the one that are underrated with KPI based on Benjamin Graham's book "The Intelligent Investor".
 
 
+## Reality 
+1. Find a list of stock tickers 
+2. Retrieve data with API Yahoo finance
+ - Lots of info in ticker.info(address, country, website, dividends, ...)
+ 
+3. Store Company in a datastore
+4. Apply the rules
 
 ## Plan 
 1. API Yahoo finance  

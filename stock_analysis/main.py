@@ -7,20 +7,24 @@ import logging
 import numpy as np
 import pandas as pd
 
-from rules.rules import Rules
 from fresh_data.importer import StockDataImporter
 from extraction.extraction import Extraction
+from rules.rules import Rules
 
+    
 def main():
     db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
+    tickers_path=r'C:\diskD\6 - CODE\stock_ana lysis\stock_analysis\yh_tickers.txt' 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     
+    # Create Importer
+    data = StockDataImporter(db_path)
+
     # Tickers to analyze --------------------------
-    tickers = ['TTE.PA', 'MC.PA', 'SU.PA', 'AI.PA']
+    data.retrieve_tickers(tickers_path)
 
     # Retrieve data with yfinance -----------------
-    data = StockDataImporter(db_path)
-    data.retrieve_data(tickers)
+    data.retrieve_data()
         
     # Save all balance sheets to a database -------
     data.to_database()    
