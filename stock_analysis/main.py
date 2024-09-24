@@ -9,9 +9,9 @@ import logging
 import numpy as np
 import pandas as pd
 
-from rules.rules import Rules
-from fresh_data.importer import StockDataImporter
-from extraction.extraction import Extraction
+# from rules.rules import Rules
+# from fresh_data.importer import StockDataImporter
+# from extraction.extraction import Extraction
 
 # Function to detect encoding
 def detect_encoding(file_path):
@@ -22,15 +22,15 @@ def detect_encoding(file_path):
 
 # Define the function to read the dictionary from a text file
 def read_dict_from_file(filename):
-    encoding = detect_encoding(filename)
-    with open(filename, 'r', encoding=encoding) as file:
+    # encoding = detect_encoding(filename)
+    with open(filename, 'r', encoding='utf-8') as file:
         content = file.read()
         dictionary = json.loads(content)
         return dictionary
     
 def main():
     db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
-    tickers_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\yh_tickers.txt' 
+    tickers_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\yh_tickers.json' 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     
     # Tickers to analyze --------------------------
