@@ -42,9 +42,9 @@ class Company:
         self.intangible_assets   : float | None = kwargs.get('intangible_assets', None)
 
         # Arrays
-        self.net_income            : np.ndarray | None = kwargs.get('net_income', None)
-        self.dividends             : np.ndarray | None = kwargs.get('dividends', None)
-        self.net_earning_per_share : np.ndarray | None = kwargs.get('net_earning_per_share', None)
+        self.net_income            : pd.DataFrame | None = kwargs.get('net_income', None)
+        self.dividends             : pd.DataFrame | None = kwargs.get('dividends', None)
+        self.net_earning_per_share : pd.DataFrame | None = kwargs.get('net_earning_per_share', None)
     # End def __init__
 
     # ===========================================================================

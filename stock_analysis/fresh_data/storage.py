@@ -6,6 +6,8 @@ Module containing the storage class for companies.
 from __future__ import annotations
 
 import json
+import codecs
+import pickle
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -79,9 +81,9 @@ class CompanyStorage:
             '{l_term_debts}',
             '{equity}',
             '{intang_assets}',
-            '{net_income}',
-            '{dividends}',
-            '{nt_ernng_shr}')                    
+            '{codecs.encode(pickle.dumps(net_income), "base64").decode()}',
+            '{codecs.encode(pickle.dumps(dividends), "base64").decode()}',
+            '{codecs.encode(pickle.dumps(nt_ernng_shr), "base64").decode()}')                    
         """)
         self.conn.commit()
     # End def add_company
@@ -91,18 +93,18 @@ class CompanyStorage:
             try:
                 company = Company(
                     name = c[1],
-                    last_update = datetime.isoformat(c[2]),
-                    actual_share_price = c[3],
-                    sales = c[4],
-                    nb_shares_issued = c[5],
-                    current_assets = c[6],
-                    current_liabilities = c[7],
-                    financial_debts = c[8],
-                    equity = c[9],
-                    intangible_assets = c[10],
-                    net_income = c[11],
-                    dividends = c[12],
-                    net_earning_per_share = c[13],
+                    last_update = c[3],
+                    actual_share_price = c[4],
+                    sales = c[5],
+                    nb_shares_issued = c[6],
+                    current_assets = c[7],
+                    current_liabilities = c[8],
+                    financial_debts = c[9],
+                    equity = c[10],
+                    intangible_assets = c[11],
+                    net_income = pickle.loads(codecs.decode(c[12].encode(), "base64")),
+                    dividends = pickle.loads(codecs.decode(c[13].encode(), "base64")),
+                    net_earning_per_share = pickle.loads(codecs.decode(c[14].encode(), "base64")),
                 )
                 yield company
             except Exception as e:

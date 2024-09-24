@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import ast
 import logging
+import numpy as np
 import pandas as pd
 import yfinance as yf
 from tqdm import tqdm
@@ -77,7 +78,7 @@ class StockDataImporter:
                 # exchanges = ['PAR']
                 # if ticker.fast_info.exchange in exchanges: 
                 if ticker.ticker.endswith('.PA'):
-                    print(f"{ticker.ticker}", end='\r') #{dir(ticker)}
+                    print(f"\n{ticker.ticker}", end='\r') #{dir(ticker)}
                     # Get financial data
                     ticker_info[ticker.ticker] = {
                         'ISIN': ticker.isin,
@@ -121,6 +122,58 @@ class StockDataImporter:
         print(f"Imported {n_company} companies.")
     # End def to_database        
 
+    def as_rule_dataframe(self) -> pd.DataFrame:
+        """Take all companies' data and convert them in a dataframe
+
+        Returns:
+            pd.DataFrame: Dataframe with a column per company
+        """
+        rule_df = pd.DataFrame()
+
+        # Define a function to safely get dataframe values if exists or return nan
+        def get_df_value(df, index):
+            try:
+                value = df.iloc[index]
+                return value if isinstance(value, float) else np.nan
+            except IndexError:
+                return np.nan
+
+        for _, company in enumerate(self.datastore.get_companies()):
+            data = {
+                'company': company.name,
+                'share_price': company.actual_share_price,
+                'sales': company.sales,
+                'curr_assets': company.current_assets,
+                'curr_liab': company.current_liabilities,
+                'long_term_debts': company.financial_debts,
+                'nb_shares': company.nb_shares_issued,
+                'equity': company.equity,
+                'intangible_assets': company.intangible_assets
+            }
+
+            # Dynamically add the 'Net income', 'Dividends' and 'net EPS' fields based on the available data
+            for i in range(10):  # Assuming you want to handle up to 10 years
+                net_income_value = get_df_value(company.net_income, i)
+                data[f'Net income {i + 1} year'] = net_income_value
+
+                dividend_value = get_df_value(company.dividends, i)
+                data[f'Dividends {i + 1} year'] = dividend_value
+
+                n_eps_value = get_df_value(company.net_earning_per_share, i)
+                data[f'Net earnings per share {i + 1} year'] = n_eps_value
+            # End for i
+
+            if rule_df.empty:
+                rule_df = pd.DataFrame(data, index=[0])
+            else:
+                curr_df = pd.DataFrame(data, index=[0])
+                rule_df = pd.concat([rule_df, curr_df], axis=0, ignore_index=True)
+        # End for _, company
+        rule_df.reset_index(inplace=True)
+        
+        return rule_df
+    # End def as_rule_dataframe
+    
     # ===========================================================================
     # Private methods
     # ===========================================================================    

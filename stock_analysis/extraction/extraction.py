@@ -6,6 +6,7 @@ Extraction of raw data
 from __future__ import annotations
 
 import logging
+import numpy as np
 import pandas as pd
 from typing import Iterator
 from datetime import datetime
@@ -65,7 +66,7 @@ class Extraction:
 
                 # Arrays
                 net_income            = self.__extract_net_income(self.income_statement[company]),
-                dividends             = self.tickers_info[company]['dividends'],   
+                dividends             = self.__extract_dividends(self.tickers_info[company]['dividends']),   
                 net_earning_per_share = self.__extract_net_earning_per_share(self.income_statement[company])
             )
 
@@ -73,88 +74,110 @@ class Extraction:
             yield company
     # End def extract_all
 
-    def as_rule_dataframe(self):
-        pass
-    # End def as_rule_dataframe
-
     # ===========================================================================
     # Private Methods
     # ===========================================================================
 
-    def __extract_sales(self,  df: pd.DataFrame) -> None:
+    def __extract_sales(self,  df: pd.DataFrame) -> float | np.nan:
         try:
             # Current assets index names
             lookup_index = ['Operating Revenue']
 
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc[lookup_index]
+            filt_df = df.loc[lookup_index]
+
+            # Take only last year and we have only one row 
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception as e:
-            result = None
+            result = np.nan
         return result
     # End def __extract_sales
 
-    def __extract_current_assets(self, df: pd.DataFrame) -> pd.DataFrame:
+    def __extract_current_assets(self, df: pd.DataFrame) -> float | np.nan:
         try:
             # Current assets index names
             lookup_index = ['Current Assets', 'Other Current Assets']
 
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc[lookup_index]
+            filt_df = df.loc[lookup_index]
+            
+            # Take only last year and we sum the 2 rows
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception as e:
-            result = None
+            result = np.nan
         return result
     # End def __extract_current_assets
 
-    def __extract_current_liabilities(self, df: pd.DataFrame) -> pd.DataFrame:
+    def __extract_current_liabilities(self, df: pd.DataFrame) -> float | np.nan:
         try:
             # Current liabilities index names
             lookup_index = ['Current Liabilities', 'Other Current Liabilities']
             
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc[lookup_index]
+            filt_df = df.loc[lookup_index]
+            
+            # Take only last year and we sum the 2 rows
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception as e:
-            result = None
+            result = np.nan
         return result
     # End def __extract_current_liabilities
 
-    def __extract_long_term_debt(self, df: pd.DataFrame) -> pd.DataFrame:
+    def __extract_long_term_debt(self, df: pd.DataFrame) -> float | np.nan:
         try:
             # Financial Long term debt index names
             # 'Long Term Debt' similar to 'Long Term Debt And Capital Lease Obligation' 
             lookup_index = ['Derivative Product Liabilities', 'Long Term Debt And Capital Lease Obligation']
 
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc[lookup_index]
+            filt_df = df.loc[lookup_index]
+            
+            # Take only last year and we sum the 2 rows
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception:
             try:
-                result = df.loc['Long Term Debt And Capital Lease Obligation']
+                filt_df = df.loc['Long Term Debt And Capital Lease Obligation']
+                
+                # Take only last year and we sum the 2 rows
+                result = sum(filt_df.iloc[:, 0])
+            
             except Exception:
-                result = None
+                result = np.nan
 
         return result
     # End def __extract_long_term_debt
 
-    def __extract_equity(self, df: pd.DataFrame) -> pd.DataFrame:
+    def __extract_equity(self, df: pd.DataFrame) -> float | np.nan:
         try:
+            lookup_index = ['Stockholders Equity']
+            
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc['Stockholders Equity']
+            filt_df = df.loc[lookup_index]
+            
+            # Take only last year and we sum the 2 rows
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception as e:
-            result = None
+            result = np.nan
         return result
     # End def __extract_equity
 
-    def __extract_goodwill(self, df: pd.DataFrame) -> pd.DataFrame:
+    def __extract_goodwill(self, df: pd.DataFrame) -> float | np.nan:
         try:
+            lookup_index = ['Goodwill And Other Intangible Assets']
+
             # Filter the DataFrame to keep only rows where the index is in look_index
-            result = df.loc['Goodwill And Other Intangible Assets']
+            filt_df = df.loc[lookup_index]
+            
+            # Take only last year and we sum the 2 rows
+            result = sum(filt_df.iloc[:, 0])
 
         except Exception as e:
-            result = None
+            result = np.nan
         return result
     # End def __extract_goodwill
 
@@ -170,7 +193,14 @@ class Extraction:
     # End def __extract_net_income
 
     def __extract_dividends(self, df: pd.DataFrame) -> pd.DataFrame:
-        pass
+        try:
+            # Filter the DataFrame to keep only rows where the index is in look_index
+            # 'Net Income' possible as well but not same values
+            result = df
+
+        except Exception as e:
+            result = None
+        return result
     # End def __extract_dividends
 
     def __extract_net_earning_per_share(self, df: pd.DataFrame) -> pd.DataFrame:

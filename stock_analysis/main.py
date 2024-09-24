@@ -3,31 +3,50 @@
 Main file calling classes 
 """
 import sys
+import json
+import chardet
 import logging 
 import numpy as np
 import pandas as pd
 
+from rules.rules import Rules
 from fresh_data.importer import StockDataImporter
 from extraction.extraction import Extraction
-from rules.rules import Rules
 
+# Function to detect encoding
+def detect_encoding(file_path):
+    with open(file_path, 'rb') as file:
+        raw_data = file.read()
+        result = chardet.detect(raw_data)
+        return result['encoding']
+
+# Define the function to read the dictionary from a text file
+def read_dict_from_file(filename):
+    encoding = detect_encoding(filename)
+    with open(filename, 'r', encoding=encoding) as file:
+        content = file.read()
+        dictionary = json.loads(content)
+        return dictionary
     
 def main():
     db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
-    tickers_path=r'C:\diskD\6 - CODE\stock_ana lysis\stock_analysis\yh_tickers.txt' 
+    tickers_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\yh_tickers.txt' 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     
-    # Create Importer
-    data = StockDataImporter(db_path)
-
     # Tickers to analyze --------------------------
-    data.retrieve_tickers(tickers_path)
+    try:
+        tickers_dict = read_dict_from_file(tickers_path)
+        print(tickers_dict.keys())
+    except Exception as e:
+        print(f"Error: {e}")
+    # tickers = ['TTE.PA', 'MC.PA', 'SU.PA', 'AI.PA']
 
-    # Retrieve data with yfinance -----------------
-    data.retrieve_data()
+    # # Retrieve data with yfinance -----------------
+    # data = StockDataImporter(db_path)
+    # data.retrieve_data(tickers)
         
-    # Save all balance sheets to a database -------
-    data.to_database()    
+    # # Save all balance sheets to a database -------
+    # data.to_database()    
     
     # Connect to Rules module ---------------------
     # share_actual_price = [25, 25, 20]

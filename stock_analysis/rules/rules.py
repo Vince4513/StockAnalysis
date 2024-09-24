@@ -6,6 +6,10 @@ Module containing the rules
 import os as os
 import numpy as np
 import pandas as pd
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 # ==================================================================================================================================================
 # Rules Class
@@ -14,13 +18,13 @@ import pandas as pd
 class Rules:
     """Determine the results of each company following the rules of fondamental analysis"""
 
-    def __init__(self, share_actual_price: list[float] | None) -> None:
+    def __init__(self) -> None:
         """Initialize the class
 
         Args:
             share_actual_price (list[float] | None): Actual price of the shares.
         """
-        self.share_price = share_actual_price
+        self.share_price = None
         self.df_rules = None
         
         # Measures 
@@ -74,12 +78,13 @@ class Rules:
             df (pd.DataFrame): Balance sheet of the company in a dataframe format.
         """
         # Calculus of measures
+        self.share_price = df['share_price'].to_list()
         self.__determine_measures(df)
 
         # 1st Rule ---------------------------------------------------------------
         # Create a new DataFrame with True/False values based on the condition
         self.df_rules = pd.DataFrame({
-            'Company': df['Company'],
+            'Company': df['company'],
             'first_rule': self.sales_greater_100M
         })
 
@@ -121,24 +126,36 @@ class Rules:
         Args:
             df (pd.DataFrame): Balance sheet of the company in a dataframe format.
         """
-        # Check if Sales (CA) > 1000 for each company
-        self.sales_greater_100M = df['Sales'] > 1000000
-        self.asset_2times_liabilities = df['Current assets'] >= 2 * df['Current liabilities']
-        self.debt_lower_BFR = df['Financial debts'] <= df['Current assets'] - df['Current liabilities']
-        self.net_income_all_positive = df.filter(like='Net income').gt(0).all(axis=1)
-        self.dividends_not_interrupted = df.filter(like='Dividends').gt(0).all(axis=1)
-        
-        first_3_years = df.filter(like='Net earnings per share').iloc[:, :3]
-        last_3_years = df.filter(like='Net earnings per share').iloc[:, -3:]
-        mean_first_3_years = first_3_years.mean(axis=1)
-        mean_last_3_years = last_3_years.mean(axis=1)
+        try:
+            # Check if Sales (CA) > 1000 for each company
+            self.sales_greater_100M = df['sales'] > 1000000
+            self.asset_2times_liabilities = df['curr_assets'] >= 2 * df['curr_liab']
+            self.debt_lower_BFR = df['long_term_debts'] <= df['curr_assets'] - df['curr_liab']
+            self.net_income_all_positive = df.filter(like='Net income').gt(0).all(axis=1)
+            self.dividends_not_interrupted = df.filter(like='Dividends').gt(0).all(axis=1)
+            
+            first_3_years = df.filter(like='Net earnings per share').iloc[:, :3]
+            last_3_years = df.filter(like='Net earnings per share').iloc[:, -3:]
+            mean_first_3_years = first_3_years.mean(axis=1)
+            mean_last_3_years = last_3_years.mean(axis=1)
 
-        self._33_percent_growth = mean_first_3_years * 4/3 < mean_last_3_years 
-        self.__PER = self.share_price / mean_last_3_years
+            self._33_percent_growth = mean_first_3_years * 4/3 < mean_last_3_years 
+            self.__PER = self.share_price / mean_last_3_years
 
-        market_cap = df['Number of shares issued'] * self.share_price 
-        net_book_value = df['Shareholders\' equity'] - df['Intangible assets']
-        self.__PBR = market_cap / net_book_value
+            market_cap = df['nb_shares'] * self.share_price 
+            net_book_value = df['equity'] - df['intangible_assets']
+            self.__PBR = market_cap / net_book_value
+
+        except KeyError as e:
+            logging.error(f"KeyError: {e}")
+        except IndexError as e:
+            logging.error(f"IndexError: {e}")
+        except TypeError as e:
+            logging.error(f"TypeError: {e}")
+        except ValueError as e:
+            logging.error(f"ValueError: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
     # End def __determine_measures
 
 # End class Rules
