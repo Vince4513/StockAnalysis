@@ -5,7 +5,8 @@ Importer of data
 
 from __future__ import annotations
 
-import ast
+import json
+import chardet
 import logging
 import numpy as np
 import pandas as pd
@@ -32,7 +33,6 @@ class StockDataImporter:
     def __init__(self, db_path: str | Path) -> None:
         
         self.datastore = CompanyStorage(db_path)
-        self.datastore.clear()
 
         # Yahoo tickers
         self.tickers_name : dict | None = None
@@ -48,53 +48,72 @@ class StockDataImporter:
     # ===========================================================================
 
     # Define the function to read the dictionary from a text file
-    def retrieve_tickers(self, filename) -> None:
-        # with open(filename, 'r', encoding='utf-8') as file:
-        #     content = file.read()
-        #     self.tickers_name = ast.literal_eval(content)
-        self.tickers_name = {'TTE.PA': 'Total Energies', 
-                             'AI.PA' : 'Air Liquide',
-                             'SAN.PA': 'Sanofi',
-                             'DG.PA' : 'Vinci',
-                             'OR.PA': 'L\'Oréal',
-                             'SU.PA': 'Schneider Electric'}
+    def retrieve_tickers(self, filename, dev=False) -> None:
+        """Returns the ticker from json file under a dictionnary format
+
+        Args:
+            filename (str | Path): Path to load the file 
+
+        Returns:
+            dict: Dictionnary with ticker as key and name of the company as the value
+        """
+
+        # Allows to load a few companies and test further functions
+        if dev == True:
+            self.tickers_name = {
+                'TTE.PA': 'Total Energies', 
+                'AI.PA' : 'Air Liquide',
+                'SAN.PA': 'Sanofi',
+                'DG.PA' : 'Vinci',
+                'OR.PA': 'L\'Oréal',
+                'SU.PA': 'Schneider Electric'
+            }
+        # Load tickers from the json file
+        else:
+            encoding = self._detect_encoding(filename)
+            with open(filename, 'r', encoding=encoding) as file:
+                content = file.read()
+                dictionary = json.loads(content)
+
+                self.tickers_name =  dictionary
     # End def retrieve tickers
 
     def retrieve_data(self):
         if self.tickers_name == None:
             raise ValueError(f"Expected tickers, but got none")
-
+        
+        # Select the tickers to add based on filters
+        tickers_to_add = [ticker for ticker in list(self.tickers_name.keys()) if ticker.endswith('.PA')]
         # try:
-        tickers = [yf.Ticker(ticker) for ticker in list(self.tickers_name.keys())]
+        tickers = [yf.Ticker(ticker) for ticker in tickers_to_add]
         # except Exception as e:
             # logger.debug(f"Ticker not found: {e}")
 
         inc_statement = {}
         bal_sheet     = {}
         ticker_info   = {}
-        for ticker in tqdm(tickers):
+        cptr = 0
+        for ticker in tickers:
+            cptr += 1
             try:
-                # Filter by exchange / market place
-                # exchanges = ['PAR']
-                # if ticker.fast_info.exchange in exchanges: 
-                if ticker.ticker.endswith('.PA'):
-                    print(f"\n{ticker.ticker}", end='\r') #{dir(ticker)}
-                    # Get financial data
-                    ticker_info[ticker.ticker] = {
-                        'ISIN': ticker.isin,
-                        'share': ticker.fast_info.last_price,
-                        'market_cap': ticker.fast_info.market_cap,
-                        'nb_shares': ticker.fast_info.shares,
-                        'dividends': ticker.dividends,
-                        'financials': ticker.financials, 
-                        'exchange': ticker.fast_info.exchange
-                    }
+                print(f"{cptr} - {ticker.ticker}", end='\r')
+                
+                # Get financial data
+                ticker_info[ticker.ticker] = {
+                    'ISIN': ticker.isin,
+                    'share': ticker.fast_info.last_price,
+                    'market_cap': ticker.fast_info.market_cap,
+                    'nb_shares': ticker.fast_info.shares,
+                    'dividends': ticker.dividends,
+                    'financials': ticker.financials, 
+                    'exchange': ticker.fast_info.exchange
+                }
             
-                    # Income statement (Compte de résultat)
-                    inc_statement[ticker.ticker] = ticker.incomestmt
+                # Income statement (Compte de résultat)
+                inc_statement[ticker.ticker] = ticker.incomestmt
 
-                    # Balance sheets (Bilan comptable)
-                    bal_sheet[ticker.ticker] = ticker.balancesheet                    
+                # Balance sheets (Bilan comptable)
+                bal_sheet[ticker.ticker] = ticker.balancesheet                    
             
             except KeyError:
                 continue
@@ -112,10 +131,16 @@ class StockDataImporter:
             income_statement = self.income_statement,
             balance_sheets = self.balance_sheets
         )
-    
+
         for index, company in enumerate(e.extract_all()):
-            self.datastore.add_company(company)
-            print(f"{index} - {company}")
+            # Check if the company exists in the database
+            if self.datastore.is_company(company):
+                self.datastore.update_company(company)
+                print(f"Update - {index} - {company}")
+
+            else:
+                self.datastore.add_company(company)
+                print(f"Add - {index} - {company}")
         # End for index, company
 
         n_company = len(self.datastore)
@@ -177,4 +202,36 @@ class StockDataImporter:
     # ===========================================================================
     # Private methods
     # ===========================================================================    
+
+    def _detect_encoding(self, file_path: str | Path) -> str:
+        """Determine the encoding of a file
+
+        Args:
+            file_path (str | Path): path of the json file with all tickers
+
+        Returns:
+            str: encoding of the file
+        """
+        with open(file_path, 'rb') as file:
+            raw_data = file.read()
+            result = chardet.detect(raw_data)
+            return result['encoding']
+    # End def detect_encoding
+
+    def _read_dict_from_file(self, filename: str | Path) -> dict:
+        """Returns the json data under a dictionnary format
+
+        Args:
+            filename (str | Path): Path to load the file 
+
+        Returns:
+            dict: Dictionnary with ticker as key and name of the company as the value
+        """
+        encoding = self._detect_encoding(filename)
+        with open(filename, 'r', encoding=encoding) as file:
+            content = file.read()
+            dictionary = json.loads(content)
+            return dictionary
+    # End def _read_dict_from_file
+
 # End class StockDataImporter
