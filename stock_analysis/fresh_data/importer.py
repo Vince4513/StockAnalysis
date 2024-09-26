@@ -5,7 +5,9 @@ Importer of data
 
 from __future__ import annotations
 
+import os
 import json
+import sqlite3
 import chardet
 import logging
 import numpy as np
@@ -13,10 +15,11 @@ import pandas as pd
 import yfinance as yf
 from tqdm import tqdm
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from extraction.extraction import Extraction
 from fresh_data.storage import CompanyStorage
-
+from fresh_data.company import Company
 # ===========================================================================
 # Constant and global variables
 # ===========================================================================
@@ -35,7 +38,7 @@ class StockDataImporter:
         self.datastore = CompanyStorage(db_path)
 
         # Yahoo tickers
-        self.tickers_name : dict | None = None
+        self.tickers_symbol : dict | None = None
 
         # API info
         self.tickers_info     : dict | None = None
@@ -47,7 +50,6 @@ class StockDataImporter:
     # Public methods
     # ===========================================================================
 
-    # Define the function to read the dictionary from a text file
     def retrieve_tickers(self, filename, dev=False) -> None:
         """Returns the ticker from json file under a dictionnary format
 
@@ -60,7 +62,7 @@ class StockDataImporter:
 
         # Allows to load a few companies and test further functions
         if dev == True:
-            self.tickers_name = {
+            self.tickers_symbol = {
                 'TTE.PA': 'Total Energies', 
                 'AI.PA' : 'Air Liquide',
                 'SAN.PA': 'Sanofi',
@@ -75,15 +77,15 @@ class StockDataImporter:
                 content = file.read()
                 dictionary = json.loads(content)
 
-                self.tickers_name =  dictionary
+                self.tickers_symbol =  dictionary
     # End def retrieve tickers
 
     def retrieve_data(self):
-        if self.tickers_name == None:
+        if self.tickers_symbol == None:
             raise ValueError(f"Expected tickers, but got none")
         
         # Select the tickers to add based on filters
-        tickers_to_add = [ticker for ticker in list(self.tickers_name.keys()) if ticker.endswith('.PA')]
+        tickers_to_add = [ticker for ticker in list(self.tickers_symbol.keys()) if ticker.endswith('.PA')]
         # try:
         tickers = [yf.Ticker(ticker) for ticker in tickers_to_add]
         # except Exception as e:
@@ -124,8 +126,51 @@ class StockDataImporter:
         self.income_statement = inc_statement
         self.balance_sheets = bal_sheet
     # End def retrieve_data
-    
-    def to_database(self):
+
+    def parallel_retrieve_data(self) -> None:
+        """Multithreaded data retrieval
+
+        Raises:
+            ValueError: If we don't have any tickers name stored in the class previously
+        """
+        if self.tickers_symbol is None:
+            raise ValueError(f"Expected tickers, but got none")
+
+        # Select tickers to add based on filters
+        tickers_to_add = [ticker for ticker in list(self.tickers_symbol.keys()) if ticker.endswith('.PA')]
+
+        # Initialize dictionaries to store the results
+        ticker_info = {}
+        inc_statement = {}
+        bal_sheet = {}
+
+        # Determine the number of threads to use
+        max_workers = min(10, os.cpu_count() * 2)  # Adjust based on your system resources
+
+        # Use ThreadPoolExecutor to fetch data in parallel
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(self._fetch_ticker_data, ticker): ticker for ticker in tickers_to_add}
+            
+            # Process each result as it completes
+            for future in as_completed(futures):
+                ticker_symbol, ticker_info_data, inc_stmt, balance_sheet = future.result()
+
+                if ticker_info_data is not None:
+                    ticker_info[ticker_symbol] = ticker_info_data
+                    inc_statement[ticker_symbol] = inc_stmt
+                    bal_sheet[ticker_symbol] = balance_sheet
+                    print(f"Worked - {ticker_symbol}.")
+
+                else:
+                    print(f"Skipping {ticker_symbol} due to an error.")
+        
+        # Store the retrieved data in the class attributes
+        self.tickers_info = ticker_info
+        self.income_statement = inc_statement
+        self.balance_sheets = bal_sheet
+    # End def parallel_retrieve_data
+
+    def to_database(self, db_path) -> None:
         e = Extraction(
             tickers_info   = self.tickers_info, 
             income_statement = self.income_statement,
@@ -133,19 +178,47 @@ class StockDataImporter:
         )
 
         for index, company in enumerate(e.extract_all()):
-            # Check if the company exists in the database
-            if self.datastore.is_company(company):
-                self.datastore.update_company(company)
-                print(f"Update - {index} - {company}")
-
-            else:
-                self.datastore.add_company(company)
-                print(f"Add - {index} - {company}")
+            self._process_company(index, company, db_path)
         # End for index, company
 
         n_company = len(self.datastore)
         print(f"Imported {n_company} companies.")
     # End def to_database        
+
+    def parallel_to_database(self, db_path: str | Path, max_workers: int = 0) -> None:
+        # If max_workers over the cpu from your machine throw value error
+        if max_workers > os.cpu_count():
+            raise ValueError
+        
+        # Use half of the available processors, unless specified otherwise
+        if max_workers <= 0:
+            max_workers = os.cpu_count() // 2
+        
+        # Extract the data info into Company instances
+        e = Extraction(
+            tickers_info   = self.tickers_info, 
+            income_statement = self.income_statement,
+            balance_sheets = self.balance_sheets
+        )
+
+        companies = list(e.extract_all())  # Extract all companies first
+
+        # Use ThreadPoolExecutor to process companies in parallel
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(self._process_company, index, company, db_path)
+                for index, company in enumerate(companies)
+            ]
+
+            for future in as_completed(futures):
+                try:
+                    future.result()  # If there's an exception, it will raise here
+                except Exception as e:
+                    print(f"Error processing company: {e}")
+
+        n_company = len(companies)
+        print(f"Imported {n_company} companies.")
+    # End def parallel_to_database
 
     def as_rule_dataframe(self) -> pd.DataFrame:
         """Take all companies' data and convert them in a dataframe
@@ -233,5 +306,59 @@ class StockDataImporter:
             dictionary = json.loads(content)
             return dictionary
     # End def _read_dict_from_file
+    
+    def _process_company(self, index: int, company: Company, db_path: str | Path) -> None:
+        
+        # Open a new SQLite connection for each thread
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
+        # Check if the company exists in the database
+        if self.datastore.is_company(cursor, company):
+            self.datastore.update_company(cursor, company)
+            print(f"Update - {index} - {company}")
+        
+        else:
+            self.datastore.add_company(cursor, company)
+            print(f"Add - {index} - {company}")
+        
+        conn.commit()
+        conn.close()
+    # End def process_company
+
+    def _fetch_ticker_data(self, ticker_symbol: str) -> tuple[str, str | None, str | None, str | None]:
+        """Retrieve data for a single Yahoo finance ticker
+
+        Args:
+            ticker_symbol (str): Yahoo finance ticker ID  
+
+        Returns:
+            tuple[str, str | None, str | None, str | None]: ID, informations, income statement and balance sheets
+        """
+        try:
+            ticker = yf.Ticker(ticker_symbol)
+            
+            # Fetch ticker info
+            ticker_info = {
+                'ISIN': ticker.isin,
+                'share': ticker.fast_info.last_price,
+                'market_cap': ticker.fast_info.market_cap,
+                'nb_shares': ticker.fast_info.shares,
+                'dividends': ticker.dividends,
+                'financials': ticker.financials,
+                'exchange': ticker.fast_info.exchange
+            }
+
+            # Income statement (Compte de résultat)
+            inc_statement = ticker.incomestmt
+
+            # Balance sheets (Bilan comptable)
+            bal_sheet = ticker.balancesheet
+
+            return ticker_symbol, ticker_info, inc_statement, bal_sheet
+        
+        except Exception as e:
+            print(f"Error fetching data for {ticker_symbol}: {e}")
+            return ticker_symbol, None, None, None
+    # End def _fetch_ticker_data
 # End class StockDataImporter

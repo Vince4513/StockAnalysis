@@ -42,7 +42,7 @@ class CompanyStorage:
     # Accessors 
     # ---------------------------------------------------------------------------------------------
     
-    def add_company(self, company: Company) -> None:
+    def add_company(self, cursor: sqlite3.Cursor, company: Company) -> None:
         
         name          = company.name
         share_p       = company.actual_share_price
@@ -57,7 +57,7 @@ class CompanyStorage:
         dividends     = company.dividends
         nt_ernng_shr  = company.net_earning_per_share
 
-        self.cursor.execute(f"""
+        cursor.execute(f"""
             INSERT INTO companies (
             name,
             actual_share_price,
@@ -85,10 +85,9 @@ class CompanyStorage:
             '{codecs.encode(pickle.dumps(dividends), "base64").decode()}',
             '{codecs.encode(pickle.dumps(nt_ernng_shr), "base64").decode()}')                    
         """)
-        self.conn.commit()
     # End def add_company
 
-    def update_company(self, company: Company) -> None:
+    def update_company(self, cursor: sqlite3.Cursor, company: Company) -> None:
         name          = company.name
         share_p       = company.actual_share_price
         sales         = company.sales
@@ -102,7 +101,7 @@ class CompanyStorage:
         dividends     = company.dividends
         nt_ernng_shr  = company.net_earning_per_share
 
-        self.cursor.execute(f"""
+        cursor.execute(f"""
             UPDATE companies
             SET 
                 actual_share_price = ?,
@@ -131,12 +130,11 @@ class CompanyStorage:
                 codecs.encode(pickle.dumps(nt_ernng_shr), "base64").decode(),
                 name  # The company you want to update
         ))
-        self.conn.commit()
     # End def update_company
 
-    def is_company(self, company: Company) -> bool:
-        self.cursor.execute("SELECT COUNT(*) FROM companies WHERE name = ?", (company.name,))
-        return self.cursor.fetchone()[0]
+    def is_company(self, cursor: sqlite3.Cursor, company: Company) -> bool:
+        cursor.execute("SELECT COUNT(*) FROM companies WHERE name = ?", (company.name,))
+        return cursor.fetchone()[0]
     # End def is_company
 
     def get_companies(self) -> Iterator[Company]:
@@ -166,7 +164,7 @@ class CompanyStorage:
     # ---------------------------------------------------------------------------------------------
     # Public Methods 
     # ---------------------------------------------------------------------------------------------
-    
+
     def clear(self, companies: bool = True) -> None:
         if companies is True:
             self.cursor.execute("DELETE FROM companies")

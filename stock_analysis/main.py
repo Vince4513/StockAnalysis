@@ -11,27 +11,32 @@ from rules.rules import Rules
 from fresh_data.importer import StockDataImporter
 from extraction.extraction import Extraction
 
+def chrono(message: str = "") -> None:
+    from datetime import datetime
+    now = datetime.now()
+    # now_str = datetime.strptime(f"{now}", "%d %Y %m %M")
+    print(f"{now} - {message}\n")
     
 def main():
     db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
     tickers_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\yh_tickers.json' 
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    # logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     
     data = StockDataImporter(db_path)
+    chrono()
 
     # Retrieve tickers from json file --------------------------
-    try:
-        data.retrieve_tickers(tickers_path, dev=True)
+    data.retrieve_tickers(tickers_path, dev=True)
+    chrono("Tickers retrieved !")
 
-    except Exception as e:
-        print(f"Error: {e}")
-    
     # Retrieve data with yfinance -----------------
-    data.retrieve_data()
-        
-    # # Save all balance sheets to a database -------
-    data.to_database()    
+    data.parallel_retrieve_data()
+    chrono("Data retrieved !")
     
+    # Save all balance sheets to a database -------
+    data.parallel_to_database(db_path, max_workers=0)    
+    chrono("Data stored !")
+
     # Connect to Rules module ---------------------
     # share_actual_price = [25, 25, 20]
 
