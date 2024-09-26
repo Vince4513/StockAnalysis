@@ -13,13 +13,13 @@ import logging
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from tqdm import tqdm
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from extraction.extraction import Extraction
 from fresh_data.storage import CompanyStorage
 from fresh_data.company import Company
+
 # ===========================================================================
 # Constant and global variables
 # ===========================================================================
@@ -251,13 +251,13 @@ class StockDataImporter:
 
             # Dynamically add the 'Net income', 'Dividends' and 'net EPS' fields based on the available data
             for i in range(10):  # Assuming you want to handle up to 10 years
-                net_income_value = get_df_value(company.net_income, i)
+                net_income_value = [get_df_value(company.net_income, i) if not company.net_income.empty else None]
                 data[f'Net income {i + 1} year'] = net_income_value
 
-                dividend_value = get_df_value(company.dividends, i)
+                dividend_value = [get_df_value(company.dividends, i) if not company.dividends.empty else None]
                 data[f'Dividends {i + 1} year'] = dividend_value
 
-                n_eps_value = get_df_value(company.net_earning_per_share, i)
+                n_eps_value = [get_df_value(company.net_earning_per_share, i) if not company.net_earning_per_share.empty else None]
                 data[f'Net earnings per share {i + 1} year'] = n_eps_value
             # End for i
 

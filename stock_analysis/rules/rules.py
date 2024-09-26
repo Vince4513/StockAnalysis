@@ -3,11 +3,13 @@
 Module containing the rules 
 """
 
-import os as os
+import logging
 import numpy as np
 import pandas as pd
-import logging
 
+# ===========================================================================
+# Constant and global variables
+# ===========================================================================
 
 logger = logging.getLogger(__name__)
 

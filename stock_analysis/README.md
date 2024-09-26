@@ -3,21 +3,20 @@ Retrieve the current share price and the financial results pdf of companies we w
 
 
 ## Reality 
-1. Find a list of stock tickers 
-2. Retrieve data with API Yahoo finance
- - Lots of info in ticker.info(address, country, website, dividends, ...)
- 
-3. Store Company in a datastore
-4. Apply the rules
+1. [x] Find a list of stock tickers  
+2. [x] Retrieve data with API Yahoo finance  
+ - Lots of info in ticker.info(address, country, website, dividends, ...)  
+3. [x] Store Company in a datastore  
+4. [ ] Apply the rules
 
 ## Plan 
 1. API Yahoo finance  
 How to find all the PARIS tickers ? 
     - [x] Current Share price
     - [x] Number of shares issued (Nombres de titres émis) 
-    - [ ] Bilan comptable  
+    - [x] Bilan comptable  
     - [x] compte de résultat
-    - [ ] Financial results PDF
+
 2. PDF data Extraction
     - Sales (CA)
     - Current assets (actif circulant)
@@ -29,10 +28,11 @@ How to find all the PARIS tickers ?
     - Number of shares issued (Nombres de titres émis)
     - Shareholders' equity (Capitaux propres)
     - Intangible assets (Immobilisations incorporelles / Goodwill)
-Save all that data in an Excel file with date of extraction
+Save all that data in a SQL database with date of extraction
 
 3. Determine companies value
     - Calculate with values obtained the 7 rules and give a score.
+    
 4. Indicate which companies are overrated and which are underrated
     - Django website
 
