@@ -36,6 +36,7 @@ class Rules:
         self.debt_lower_BFR = None
         self.net_income_all_positive = None
         self.dividends_not_interrupted = None
+        self._33_percent_growth = None
 
         # Internal members
         self.__PER = None
@@ -73,7 +74,7 @@ class Rules:
     # Public Methods
     # ----------------------------------------------------------------------------------------------------------------------------------------------
 
-    def determine_rules(self, df: pd.DataFrame):
+    def determine_rules(self, df: pd.DataFrame) -> None:
         """Determine the results of each rule based on measures.
 
         Args:
@@ -122,7 +123,7 @@ class Rules:
     # Private Methods
     # ----------------------------------------------------------------------------------------------------------------------------------------------
     
-    def __determine_measures(self, df: pd.DataFrame):
+    def __determine_measures(self, df: pd.DataFrame) -> None:
         """Calculate the measures of fondamental analysis based on the data in df.
 
         Args:
