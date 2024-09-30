@@ -13,6 +13,7 @@ setuptools = "^70.0.0"
 polygon-api-client = "^1.13.7"
 yfinance = "^0.2.40"
 chardet = "^5.2.0"
+streamlit = "^1.38.0"
 
 
 [build-system]
