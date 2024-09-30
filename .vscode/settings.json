@@ -1,8 +1,6 @@
 {
     "conventionalCommits.scopes": [
-        "Extraction",
-        "Storage",
-        "Rules",
-        "Interface"
+        "Connection",
+        "extraction"
     ]
 }
