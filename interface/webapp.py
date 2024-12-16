@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import altair as alt
 import streamlit as st
+import seaborn as sns
+import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 
@@ -56,14 +58,17 @@ class StockAnalysisApp:
         st.title("Stock Analysis Dashboard")
         st.markdown("_Prototype v0.1.0_")
 
-        raw_data_tab, rules_tab = st.tabs(["Upload", "7 Rules"])
+        raw_data_tab, plots, rules_tab = st.tabs(["Upload", "Plots", "7 Rules"])
 
         df = self.show_raw_data_tab(raw_data_tab)
-        # self.show_kpi_tab(kpi_tab)
+        self.show_graphs(plots, df)
+        #self.show_kpi_tab(kpi_tab)
         self.show_rules_tab(rules_tab, df)
     # End def show_tabs
 
     def load_data(self) -> None:
+        st.sidebar.header("Load data")
+
         # Retrieve tickers from json file --------------------------
         self.imprt.retrieve_tickers(self.ticker_path, dev=True)
         chrono("Tickers retrieved !")  
@@ -92,6 +97,27 @@ class StockAnalysisApp:
             
             return df
     # End def show_kpi_tab
+
+    def show_graphs(self, tab, df: pd.DataFrame) -> None:
+        with tab:
+            st.header("Graphs")
+            
+            # Plot dataframe informations of all companies from the database
+            st.sidebar.header("Plot Options")
+            x_axis = st.sidebar.selectbox("Select X-axis", df.columns)
+            y_axis = st.sidebar.selectbox("Select Y-axis", df.columns)
+            hue = st.sidebar.selectbox("Select Hue", [None] + list(df.columns))
+
+            # Create the Seaborn plot
+            fig, ax = plt.subplots()
+            sns.scatterplot(data=df, x=x_axis, y=y_axis, hue=hue, ax=ax)
+
+            # Display the plot in Streamlit
+            st.pyplot(fig)
+            # Plot the dataframe
+            st.dataframe(df)
+            
+    # End def show_graphs
 
     def show_rules_tab(self, tab, df: pd.DataFrame) -> None:
         with tab:

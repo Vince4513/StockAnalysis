@@ -9,6 +9,10 @@ Retrieve the current share price and the financial results pdf of companies we w
 3. [x] Store Company in a datastore  
 4. [ ] Apply the rules
 
+Check the None's in the retrieving data part
+Do some plots 
+Solve the None <= float problem in Rules
+
 ## Plan 
 1. API Yahoo finance  
 How to find all the PARIS tickers ? 
