@@ -12,6 +12,7 @@ Retrieve the current share price and the financial results pdf of companies we w
 Check the None's in the retrieving data part
 Do some plots 
 Solve the None <= float problem in Rules
+Add a report button to download pdf with a summary and 1 detailled page per company 
 
 ## Plan 
 1. API Yahoo finance  
