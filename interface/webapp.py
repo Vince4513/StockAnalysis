@@ -3,6 +3,7 @@
 Interface class
 """
 
+import os
 import numpy as np
 import pandas as pd
 import altair as alt
@@ -15,6 +16,7 @@ from datetime import datetime
 from rules.rules import Rules
 from fresh_data.importer import StockDataImporter
 from ml.models import Models
+from interface.reports import PDF
 
 # ==================================================================================================================================================
 # StockAnalysisApp Class
@@ -173,6 +175,26 @@ class StockAnalysisApp:
                 file_name="large_df.csv",
                 mime="text/csv",
             )
+
+            # Adapt the function with the code below
+            date = datetime.now()
+            title = f'Report_{date.month}_{date.year}'
+            os.chdir(r".\interface")
+
+            # Create PDF object
+            pdf = PDF("P","mm", "A4")
+            
+            pdf.alias_nb_pages() # Get total page numbers 
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.set_font('helvetica', '', 16)
+
+            # Print from txt 
+            pdf.print_chapter(1, 'Total Energies', r'.\TTE.txt')
+            pdf.print_chapter(2, 'Orange', r'.\ORA.txt')
+
+            # Create pdf
+            pdf.output(f'{title}.pdf')
+
     # End def show_report_tab
 
 # End class StockAnalysisApp
