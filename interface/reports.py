@@ -1,13 +1,16 @@
-import os
 from fpdf import FPDF
-from datetime import datetime
 
 # ==================================================================================================================================================
 # PDF Class
 # ==================================================================================================================================================
 
 class PDF(FPDF):
-    def header(self):
+    def header(self, title: str) -> None:
+        """Create a proper header
+
+        Args:
+            title (str): Title to print in the header
+        """
         # Logo
         self.image(r'.\images.png', x = 10, y = 8, w = 30)
         
@@ -34,7 +37,13 @@ class PDF(FPDF):
         self.ln(10)
     # End def header
     
-    def chapter_title(self, ch_num, ch_title):
+    def chapter_title(self, ch_num: int, ch_title: str) -> None:
+        """Create the chapter title layout
+
+        Args:
+            ch_num (int): Chapter number
+            ch_title (str): Chapter title 
+        """
         self.set_font('helvetica', '', 12)
         self.set_fill_color(200, 200, 255)
 
@@ -43,7 +52,12 @@ class PDF(FPDF):
         self.ln()
     # End def chapter_title
 
-    def chapter_body(self, name):
+    def chapter_body(self, name: str) -> None:
+        """Create the chapter body layout from a txt file
+
+        Args:
+            name (str): name of the txt file
+        """
         # read text file
         with open(name, 'rb') as fh:
             txt = fh.read().decode('latin-1')
@@ -55,13 +69,22 @@ class PDF(FPDF):
         self.cell(0, 5, 'End of chapter')
     # End def chapter_body
 
-    def print_chapter(self, ch_num, ch_title, name):
+    def print_chapter(self, ch_num: int, ch_title: str, name: str) -> None:
+        """Display a chapter on a new page in the current pdf
+
+        Args:
+            ch_num (int): chpater number
+            ch_title (str): chapter title
+            name (str): txt file name 
+        """
         self.add_page()
         self.chapter_title(ch_num, ch_title)
         self.chapter_body(name)
     # End def print_chapter
 
-    def footer(self):
+    def footer(self) -> None:
+        """Create a proper footer in the pdf"""
+        
         # Set position of the footer
         self.set_y(-15)
         # Set font

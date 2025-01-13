@@ -184,6 +184,7 @@ class StockAnalysisApp:
             # Create PDF object
             pdf = PDF("P","mm", "A4")
             
+            pdf.header(title)
             pdf.alias_nb_pages() # Get total page numbers 
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.set_font('helvetica', '', 16)
