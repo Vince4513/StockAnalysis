@@ -34,7 +34,7 @@ class StockDataImporter:
     """Import the data from Internet"""
 
     def __init__(self, db_path: str | Path) -> None:
-        
+
         self.datastore = CompanyStorage(db_path)
 
         # Yahoo tickers
@@ -61,7 +61,7 @@ class StockDataImporter:
         """
 
         # Allows to load a few companies and test further functions
-        if dev == True:
+        if dev:
             self.tickers_symbol = {
                 'TTE.PA': 'Total Energies', 
                 'AI.PA' : 'Air Liquide',
@@ -81,9 +81,9 @@ class StockDataImporter:
     # End def retrieve tickers
 
     def retrieve_data(self):
-        if self.tickers_symbol == None:
-            raise ValueError(f"Expected tickers, but got none")
-        
+        if self.tickers_symbol is None:
+            raise ValueError("Expected tickers, but got none")
+
         # Select the tickers to add based on filters
         tickers_to_add = [ticker for ticker in list(self.tickers_symbol.keys()) if ticker.endswith('.PA')]
         # try:
@@ -99,7 +99,7 @@ class StockDataImporter:
             cptr += 1
             try:
                 print(f"{cptr} - {ticker.ticker}", end='\r')
-                
+
                 # Get financial data
                 ticker_info[ticker.ticker] = {
                     'ISIN': ticker.isin,
@@ -110,13 +110,13 @@ class StockDataImporter:
                     'financials': ticker.financials, 
                     'exchange': ticker.fast_info.exchange
                 }
-            
+
                 # Income statement (Compte de résultat)
                 inc_statement[ticker.ticker] = ticker.incomestmt
 
                 # Balance sheets (Bilan comptable)
-                bal_sheet[ticker.ticker] = ticker.balancesheet                    
-            
+                bal_sheet[ticker.ticker] = ticker.balancesheet
+
             except KeyError:
                 continue
             except Exception:
@@ -134,7 +134,7 @@ class StockDataImporter:
             ValueError: If we don't have any tickers name stored in the class previously
         """
         if self.tickers_symbol is None:
-            raise ValueError(f"Expected tickers, but got none")
+            raise ValueError("Expected tickers, but got none")
 
         # Select tickers to add based on filters
         tickers_to_add = [ticker for ticker in list(self.tickers_symbol.keys()) if ticker.endswith('.PA')]
@@ -150,7 +150,7 @@ class StockDataImporter:
         # Use ThreadPoolExecutor to fetch data in parallel
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(self._fetch_ticker_data, ticker): ticker for ticker in tickers_to_add}
-            
+
             # Process each result as it completes
             for future in as_completed(futures):
                 ticker_symbol, ticker_info_data, inc_stmt, balance_sheet = future.result()
@@ -163,7 +163,7 @@ class StockDataImporter:
 
                 else:
                     print(f"Skipping {ticker_symbol} due to an error.")
-        
+
         # Store the retrieved data in the class attributes
         self.tickers_info = ticker_info
         self.income_statement = inc_statement
@@ -356,7 +356,7 @@ class StockDataImporter:
             bal_sheet = ticker.balancesheet
 
             return ticker_symbol, ticker_info, inc_statement, bal_sheet
-        
+
         except Exception as e:
             print(f"Error fetching data for {ticker_symbol}: {e}")
             return ticker_symbol, None, None, None
