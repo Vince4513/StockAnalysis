@@ -65,11 +65,11 @@ class StockAnalysisApp:
             ["Upload", "Plots", "7 Rules", "Regression", "Reports"])
 
         df = self.show_raw_data_tab(raw_data_tab)
-        self.show_graphs(plots, df)
-        #self.show_kpi_tab(kpi_tab)
-        self.show_rules_tab(rules_tab, df)
-        self.show_regres_tab(regression_tab, df)
-        self.show_report_tab(report_tab, df)
+        # self.show_graphs(plots, df)
+        # self.show_kpi_tab(kpi_tab)
+        # self.show_rules_tab(rules_tab, df)
+        # self.show_regres_tab(regression_tab, df)
+        # self.show_report_tab(report_tab, df)
     # End def show_tabs
 
     def load_data(self) -> None:
@@ -154,8 +154,7 @@ class StockAnalysisApp:
             st.header("Regression")
             ml = Models(df, 'sales')
             ml.get_score(estimators = 100)
-            ml.plot_errors()
-            
+            ml.plot_errors()     
     # End def show_regres_tab
 
     def show_report_tab(self, tab, df: pd.DataFrame) -> None:
@@ -195,7 +194,6 @@ class StockAnalysisApp:
 
             # Create pdf
             pdf.output(f'{title}.pdf')
-
     # End def show_report_tab
 
 # End class StockAnalysisApp

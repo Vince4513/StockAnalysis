@@ -73,3 +73,10 @@ Depends on the company website:
 [Medium Context](https://medium.com/@aguimarneto/python-stock-price-apis-e67d5310f6e3)  
 [YAHOO Market Place](https://fr.aide.yahoo.com/kb/SLN2310.html#/)  
 [Documentation & Code - yfinance](https://github.com/ranaroussi/yfinance/tree/main)  
+
+### Notes
+In the project, when we retrieve the data, there is 2 ways to achieve the same purpose:  
+- First, using *yf.Ticker(ticker).incomestmt*  
+- Second, using *yf.Ticker(ticker).financials*  
+
+For this project, I will keep *yf.Ticker(ticker).incomestmt* but it's possible to retrieve with *yf.Ticker(ticker).financials* (same data).  

@@ -107,7 +107,6 @@ class StockDataImporter:
                     'market_cap': ticker.fast_info.market_cap,
                     'nb_shares': ticker.fast_info.shares,
                     'dividends': ticker.dividends,
-                    'financials': ticker.financials, 
                     'exchange': ticker.fast_info.exchange
                 }
 
@@ -345,7 +344,6 @@ class StockDataImporter:
                 'market_cap': ticker.fast_info.market_cap,
                 'nb_shares': ticker.fast_info.shares,
                 'dividends': ticker.dividends,
-                'financials': ticker.financials,
                 'exchange': ticker.fast_info.exchange
             }
 
