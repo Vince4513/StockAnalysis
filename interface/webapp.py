@@ -34,7 +34,28 @@ class StockAnalysisApp:
             page_icon=":bar_chart:",
             layout="wide"
         )
+
+        # Astuces ------------------------------------
         
+        # # ✅ definir un logo à sa page
+        # st.logo("./sources/<monLogo>.svg")
+
+        # # ✅ gérer la largeur de colonnes d affichage (ici 1 colonne de 10, puis un espace de 2 puis une colonne de 10) :
+        # col1,_,col2=st.columns([10,2,10])
+
+        # # ✅ sauver des data en cache (ici le statut logged_in):
+        # st.session_state['logged_in'] = "True"
+
+        # # ✅ faire une entrée de texte de type mot de passe (caractères masqués)
+        # st.text_input("mot de passe" type="password")
+
+        # # ✅ intégrer du markdown: c'est supporté avec st.write
+
+        # # ✅ afficher une base de données éditable (valeurs, ajout de lignes)
+        # st.data_editor(<your-dataframe-here>, num_rows="dynamic")
+        
+        # ---------------------------------------------
+
         # Store the paths (database & ticker json file)
         self.db_path : str | Path = db_path
         self.ticker_path : str | Path = ticker_path
@@ -67,7 +88,7 @@ class StockAnalysisApp:
         df = self.show_raw_data_tab(raw_data_tab)
         # self.show_graphs(plots, df)
         # self.show_kpi_tab(kpi_tab)
-        # self.show_rules_tab(rules_tab, df)
+        self.show_rules_tab(rules_tab, df)
         # self.show_regres_tab(regression_tab, df)
         # self.show_report_tab(report_tab, df)
     # End def show_tabs

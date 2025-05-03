@@ -65,11 +65,15 @@ class Extraction:
                 dividends           = self.__extract_dividends(self.tickers_info[company]['dividends'])
                 net_earning_per_share = self.__extract_net_earning_per_share(self.income_statement[company])
 
-                # Check if any required information is None
+                # Check if any required information is None in single variable
                 if any(info is None for info in [
                     actual_share_price, sales, nb_shares_issued, current_assets, 
-                    current_liabilities, financial_debts, equity, intangible_assets,
-                    net_income, dividends, net_earning_per_share]):
+                    current_liabilities, financial_debts, equity, intangible_assets]):
+                    print(f"Skipping {company} due to missing data.")
+                    continue  # Skip to the next company if any info is None
+                
+                # Check if any required information is None in pandas dataframe
+                if any(info.isnull().sum() > 0 for info in [net_income, dividends, net_earning_per_share]):
                     print(f"Skipping {company} due to missing data.")
                     continue  # Skip to the next company if any info is None
 
@@ -224,11 +228,13 @@ class Extraction:
         try:
             # Filter the DataFrame to keep only rows where the index is in look_index
             # 'Net Income' possible as well but not same values
-            result = df
+            
+            # Sum the values per year
+            df_yearly_sum = df.resample('YE').sum()
 
         except Exception as e:
-            result = None
-        return result
+            df_yearly_sum = None
+        return df_yearly_sum
     # End def __extract_dividends
 
     def __extract_net_earning_per_share(self, df: pd.DataFrame) -> pd.DataFrame | None:

@@ -21,11 +21,8 @@ class Rules:
     """Determine the results of each company following the rules of fondamental analysis"""
 
     def __init__(self) -> None:
-        """Initialize the class
-
-        Args:
-            share_actual_price (list[float] | None): Actual price of the shares.
-        """
+        """Initialize the class"""
+        
         self.share_price = None
         self.df_rules = None
         

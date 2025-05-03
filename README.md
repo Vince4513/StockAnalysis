@@ -80,3 +80,5 @@ In the project, when we retrieve the data, there is 2 ways to achieve the same p
 - Second, using *yf.Ticker(ticker).financials*  
 
 For this project, I will keep *yf.Ticker(ticker).incomestmt* but it's possible to retrieve with *yf.Ticker(ticker).financials* (same data).  
+
+- net income / dividends / net earning per share are all stored under a pandas Dataframe with a datetime64[ns] type index.
