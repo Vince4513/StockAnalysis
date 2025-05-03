@@ -14,7 +14,7 @@ from pathlib import Path
 from datetime import datetime
 
 from rules.rules import Rules
-from fresh_data.importer import StockDataImporter
+from fresh_data.importer import FinancialDataImporter
 from ml.models import Models
 from interface.reports import PDF
 
@@ -22,7 +22,7 @@ from interface.reports import PDF
 # StockAnalysisApp Class
 # ==================================================================================================================================================
 
-class StockAnalysisApp:
+class FinancialDataInterface :
     """Streamlit application to interact with the backend"""
 
     def __init__(self, 
@@ -61,7 +61,7 @@ class StockAnalysisApp:
         self.ticker_path : str | Path = ticker_path
         
         # Initialize the importer class
-        self.imprt = StockDataImporter(self.db_path)
+        self.imprt = FinancialDataImporter(self.db_path)
     # End def __init__
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------

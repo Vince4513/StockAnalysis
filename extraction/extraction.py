@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
-class Extraction:
+class FinancialDataCleaner:
     """Extract interesting data from raw data"""
 
     def __init__(self, **kwargs) -> None:
@@ -248,8 +248,5 @@ class Extraction:
     # End def __extract_net_earning_per_share
 # End class Extraction
 
-def main():
-    Extraction()
-
 if __name__ == "__main__":
-    main()
+    FinancialDataCleaner()

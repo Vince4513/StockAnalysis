@@ -13,15 +13,19 @@ import logging
 from pathlib import Path
 from typing import Iterator
 
-# from fresh_data.company import Company
-# from rules.rules import Rules
+from fresh_data.company import Company
+from rules.rules import Rules
 
 # ===========================================================================
-# Company Class
+# Constant and global variables
 # ===========================================================================
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+# ===========================================================================
+# Company Class
+# ===========================================================================
 
 class CompanyStorage:
     """Class to store and retrieve companies info from a sqlite database."""
@@ -74,125 +78,6 @@ class CompanyStorage:
             """, (company_id,))
         return self.cursor.fetchall()
     # End def get_financials
-
-    # def add_company(self, cursor: sqlite3.Cursor, company: Company) -> None:
-        
-    #     name          = company.name
-    #     share_p       = company.actual_share_price
-    #     sales         = company.sales
-    #     nb_shares     = company.nb_shares_issued
-    #     curr_assets   = company.current_assets
-    #     curr_liab     = company.current_liabilities
-    #     l_term_debts  = company.financial_debts
-    #     equity        = company.equity
-    #     intang_assets = company.intangible_assets
-    #     net_income    = company.net_income
-    #     dividends     = company.dividends
-    #     nt_ernng_shr  = company.net_earning_per_share
-
-    #     cursor.execute(f"""
-    #         INSERT INTO companies (
-    #         name,
-    #         actual_share_price,
-    #         sales,
-    #         nb_shares_issued,
-    #         current_assets,
-    #         current_liabilities,
-    #         financial_debts,
-    #         equity,
-    #         intangible_assets,  
-    #         net_income,
-    #         dividends,  
-    #         net_earning_per_share)
-    #         VALUES(
-    #         '{name}',
-    #         '{share_p}',
-    #         '{sales}',
-    #         '{nb_shares}',
-    #         '{curr_assets}',
-    #         '{curr_liab}',
-    #         '{l_term_debts}',
-    #         '{equity}',
-    #         '{intang_assets}',
-    #         '{codecs.encode(pickle.dumps(net_income), "base64").decode()}',
-    #         '{codecs.encode(pickle.dumps(dividends), "base64").decode()}',
-    #         '{codecs.encode(pickle.dumps(nt_ernng_shr), "base64").decode()}')                    
-    #     """)
-    # # End def add_company
-
-    # def update_company(self, cursor: sqlite3.Cursor, company: Company) -> None:
-    #     name          = company.name
-    #     share_p       = company.actual_share_price
-    #     sales         = company.sales
-    #     nb_shares     = company.nb_shares_issued
-    #     curr_assets   = company.current_assets
-    #     curr_liab     = company.current_liabilities
-    #     l_term_debts  = company.financial_debts
-    #     equity        = company.equity
-    #     intang_assets = company.intangible_assets
-    #     net_income    = company.net_income
-    #     dividends     = company.dividends
-    #     nt_ernng_shr  = company.net_earning_per_share
-
-    #     cursor.execute(f"""
-    #         UPDATE companies
-    #         SET 
-    #             actual_share_price = ?,
-    #             sales = ?,
-    #             nb_shares_issued = ?,
-    #             current_assets = ?,
-    #             current_liabilities = ?,
-    #             financial_debts = ?,
-    #             equity = ?,
-    #             intangible_assets = ?,
-    #             net_income = ?,
-    #             dividends = ?,
-    #             net_earning_per_share = ?
-    #         WHERE name = ?
-    #         """, (
-    #             share_p, 
-    #             sales, 
-    #             nb_shares, 
-    #             curr_assets, 
-    #             curr_liab, 
-    #             l_term_debts, 
-    #             equity, 
-    #             intang_assets, 
-    #             codecs.encode(pickle.dumps(net_income), "base64").decode(),
-    #             codecs.encode(pickle.dumps(dividends), "base64").decode(),
-    #             codecs.encode(pickle.dumps(nt_ernng_shr), "base64").decode(),
-    #             name  # The company you want to update
-    #     ))
-    # # End def update_company
-
-    # def is_company(self, cursor: sqlite3.Cursor, company: Company) -> bool:
-    #     cursor.execute("SELECT COUNT(*) FROM companies WHERE name = ?", (company.name,))
-    #     return cursor.fetchone()[0]
-    # # End def is_company
-
-    # def get_companies(self) -> Iterator[Company]:
-    #     for c in self.cursor.execute("SELECT * FROM companies").fetchall():
-    #         try:
-    #             company = Company(
-    #                 name = c[1],
-    #                 last_update = c[3],
-    #                 actual_share_price = c[4],
-    #                 sales = c[5],
-    #                 nb_shares_issued = c[6],
-    #                 current_assets = c[7],
-    #                 current_liabilities = c[8],
-    #                 financial_debts = c[9],
-    #                 equity = c[10],
-    #                 intangible_assets = c[11],
-    #                 net_income = pickle.loads(codecs.decode(c[12].encode(), "base64")),
-    #                 dividends = pickle.loads(codecs.decode(c[13].encode(), "base64")),
-    #                 net_earning_per_share = pickle.loads(codecs.decode(c[14].encode(), "base64")),
-    #             )
-    #             yield company
-    #         except Exception as e:
-    #             print(f"Error: {e}")
-    #     # End for c
-    # # End def get_companies
 
     # ---------------------------------------------------------------------------------------------
     # Public Methods 

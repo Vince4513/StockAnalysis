@@ -16,7 +16,7 @@ import yfinance as yf
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from extraction.extraction import Extraction
+from extraction.extraction import FinancialDataCleaner
 from fresh_data.storage import CompanyStorage
 from fresh_data.company import Company
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Importer Class
 # ===========================================================================
 
-class StockDataImporter:
+class FinancialDataImporter:
     """Import the data from Internet"""
 
     def __init__(self, db_path: str | Path) -> None:
@@ -170,7 +170,7 @@ class StockDataImporter:
     # End def parallel_retrieve_data
 
     def to_database(self, db_path) -> None:
-        e = Extraction(
+        e = FinancialDataCleaner(
             tickers_info   = self.tickers_info, 
             income_statement = self.income_statement,
             balance_sheets = self.balance_sheets
@@ -194,7 +194,7 @@ class StockDataImporter:
             max_workers = os.cpu_count() // 2
         
         # Extract the data info into Company instances
-        e = Extraction(
+        e = FinancialDataCleaner(
             tickers_info   = self.tickers_info, 
             income_statement = self.income_statement,
             balance_sheets = self.balance_sheets
