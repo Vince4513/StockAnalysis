@@ -16,9 +16,9 @@ import yfinance as yf
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from extraction.extraction import FinancialDataCleaner
-from fresh_data.storage import CompanyStorage
-from fresh_data.company import Company
+from financial_pipeline.cleaner.financial_data_cleaner import FinancialDataCleaner
+from financial_pipeline.storage.company_storage import CompanyStorage
+from archive.company import Company
 
 # ===========================================================================
 # Constant and global variables
@@ -27,7 +27,7 @@ from fresh_data.company import Company
 logger = logging.getLogger(__name__)
 
 # ===========================================================================
-# Importer Class
+# FinancialDataImporter Class
 # ===========================================================================
 
 class FinancialDataImporter:

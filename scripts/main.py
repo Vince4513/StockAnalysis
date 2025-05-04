@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from interface.webapp import FinancialDataInterface
+from financial_pipeline.interface.financial_data_interface import FinancialDataInterface
     
 def main():
     db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'

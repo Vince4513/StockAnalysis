@@ -14,12 +14,12 @@ from pathlib import Path
 from datetime import datetime
 
 from rules.rules import Rules
-from fresh_data.importer import FinancialDataImporter
+from financial_pipeline.importer.financial_data_importer import FinancialDataImporter
 from ml.models import Models
 from interface.reports import PDF
 
 # ==================================================================================================================================================
-# StockAnalysisApp Class
+# FinancialDataInterface Class
 # ==================================================================================================================================================
 
 class FinancialDataInterface :

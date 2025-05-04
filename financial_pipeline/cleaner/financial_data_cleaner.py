@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- #
 """
-Extraction of raw data
+Cleaning of raw data
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import pandas as pd
 from typing import Iterator
 from datetime import datetime
 
-from fresh_data.company import Company
+from archive.company import Company
 
 # ===========================================================================
 # Constant and global variables
@@ -20,7 +20,7 @@ from fresh_data.company import Company
 logger = logging.getLogger(__name__)
 
 # ===========================================================================
-# Extraction Class
+# FinancialDataCleaner Class
 # ===========================================================================
 
 
