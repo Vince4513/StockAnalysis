@@ -1,13 +1,17 @@
 import unittest
+
 from financial_pipeline.storage.company_storage import CompanyStorage
+
 
 class TestCompanyStorage(unittest.TestCase):
     def setUp(self):
         # Use in-memory SQLite DB to isolate tests
         self.storage = CompanyStorage(":memory:")
+    # End def setUp
 
     def tearDown(self):
         self.storage.close()
+    # End def tearDown
 
     def test_add_and_get_company(self):
         self.storage.add_company("AlphaCorp", "Finance", "USA")
@@ -16,12 +20,14 @@ class TestCompanyStorage(unittest.TestCase):
         self.assertEqual(company[1], "AlphaCorp")
         self.assertEqual(company[2], "Finance")
         self.assertEqual(company[3], "USA")
+    # End def test_add_and_get_company
 
     def test_add_duplicate_company(self):
         self.storage.add_company("BetaCorp")
         self.storage.add_company("BetaCorp")  # Should not raise error
         companies = self.storage.list_companies()
         self.assertEqual(len(companies), 1)
+    # End def test_add_duplicate_company
 
     def test_update_and_get_financials(self):
         self.storage.add_company("GammaCorp")
@@ -30,6 +36,7 @@ class TestCompanyStorage(unittest.TestCase):
         self.assertEqual(len(financials), 1)
         self.assertEqual(financials[0][5], 1000.0)  # sales
         self.assertEqual(financials[0][-1], 2.5)    # eps
+    # End def test_update_and_get_financials
 
     def test_update_existing_financials(self):
         self.storage.add_company("DeltaCorp")
@@ -38,6 +45,7 @@ class TestCompanyStorage(unittest.TestCase):
         updated = self.storage.get_financials("DeltaCorp", 2022)[0]
         self.assertEqual(updated[5], 1500.0)
         self.assertEqual(updated[-1], 1.0)
+    # End def test_update_existing_financials
 
     def test_list_companies(self):
         self.storage.add_company("EpsilonCorp", "Energy", "UK")
@@ -46,6 +54,7 @@ class TestCompanyStorage(unittest.TestCase):
         names = [c[1] for c in companies]
         self.assertIn("EpsilonCorp", names)
         self.assertIn("ZetaCorp", names)
+    # End def test_list_companies
 
     def test_delete_company(self):
         self.storage.add_company("OmegaCorp")
@@ -54,6 +63,8 @@ class TestCompanyStorage(unittest.TestCase):
 
         self.assertIsNone(self.storage.get_company("OmegaCorp"))
         self.assertEqual(self.storage.get_financials("OmegaCorp"), None)
+    # End def test_delete_company
+# End class TestCompanyStorage
 
 if __name__ == '__main__':
     unittest.main()
