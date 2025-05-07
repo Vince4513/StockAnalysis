@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*- #
+"""
+Main file calling classes 
+"""
+import sys
+import logging 
+import numpy as np
+import pandas as pd
+
+from financial_pipeline.interface.financial_data_interface import FinancialDataInterface
+    
+def main():
+    db_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\company.db'
+    tickers_path=r'C:\diskD\6 - CODE\stock_analysis\stock_analysis\yh_tickers.json' 
+    # logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    app = FinancialDataInterface(db_path, tickers_path)
+    app.run()
+
+
+if __name__ == "__main__":
+    main()
