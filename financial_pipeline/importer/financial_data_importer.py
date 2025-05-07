@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import os
 import json
-import pandas
 import logging
 import chardet
 import yfinance as yf
-from pathlib import Path
+
 from typing import List
+from pathlib import Path
 from curl_cffi import requests
 from concurrent.futures import ThreadPoolExecutor
 
