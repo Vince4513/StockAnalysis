@@ -5,10 +5,10 @@ Module containing the storage class for companies.
 
 from __future__ import annotations
 
+import os
 import csv
 import sqlite3
 import logging
-from pathlib import Path
 
 # ===========================================================================
 # Constant and global variables
@@ -24,8 +24,9 @@ logging.basicConfig(level=logging.DEBUG)
 class CompanyStorage:
     """Class to store and retrieve companies info from a sqlite database."""
 
-    def __init__(self, source: str | Path) -> None:
-        self.conn = sqlite3.connect(source)
+    def __init__(self, source=None) -> None:
+        db_source = source or "data/processed/test.db"
+        self.conn = sqlite3.connect(db_source)
         self.cursor = self.conn.cursor()
 
         self.__initialize_db()
@@ -157,7 +158,8 @@ class CompanyStorage:
             "current_liabilities", "financial_debts", "equity", "intangible_assets",
             "net_income", "dividends", "eps"
         ]
-
+        
+        os.chdir("data/processed/")
         with open(file_path, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(headers)
@@ -224,7 +226,7 @@ class CompanyStorage:
 
 
 if __name__ == '__main__':
-    s = CompanyStorage(source="./test.db")
+    s = CompanyStorage()
     s.add_company(name="BBC")
     logger.debug(s.get_company_id(name="BBA"))
     logger.debug(s.get_company_id(name="BBC"))

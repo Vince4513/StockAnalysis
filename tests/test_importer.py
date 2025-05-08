@@ -14,6 +14,8 @@ class TestFinancialDataImporter(unittest.TestCase):
 
     @patch("os.path.exists", return_value=False)
     def test_retrieve_tickers_returns_default_if_file_missing(self, mock_exists):
+        """Mocks os.path.exists() to simulate missing ticker file"""
+
         tickers = self.importer.retrieve_tickers()
         self.assertIn("TTE.PA", tickers)
         self.assertGreater(len(tickers), 0)
@@ -23,6 +25,8 @@ class TestFinancialDataImporter(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open, read_data='{"TTE.PA": "TotalEnergies"}')
     @patch("chardet.detect", return_value={"encoding": "utf-8"})
     def test_retrieve_tickers_from_file(self, mock_chardet, mock_open_func, mock_exists):
+        """Tests reading JSON tickers from a mocked file"""
+
         tickers = self.importer.retrieve_tickers()
         self.assertEqual(tickers, ["TTE.PA"])
     # End def test_retrieve_tickers_from_file
@@ -30,6 +34,8 @@ class TestFinancialDataImporter(unittest.TestCase):
     @patch("financial_pipeline.importer.financial_data_importer.yf.Ticker")
     @patch("builtins.open", new_callable=mock_open)
     def test_fetch_ticker_data_success(self, mock_file, mock_yf):
+        """Mocks yfinance.Ticker to simulate a successful fetch"""
+
         mock_ticker = MagicMock()
         mock_ticker.info = {"some": "data"}
         mock_ticker.isin = "ISIN123"
@@ -48,11 +54,14 @@ class TestFinancialDataImporter(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open)
     @patch("financial_pipeline.importer.financial_data_importer.logger")
     def test_fetch_ticker_data_handles_error(self, mock_logger, mock_file, mock_yf):
+        """Simulates an exception in yfinance.Ticker and verifies error logging"""
+
         self.importer._fetch_ticker_data("INVALID")
         mock_logger.error.assert_called()
     # End def test_fetch_ticker_data_handles_error
 
     def test_convert_timestamp(self):
+        """Verifies date formatting transformation logic"""
         input_data = {
             "2020": {
                 Path("2020-01-01"): 100,
