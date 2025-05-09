@@ -78,19 +78,24 @@ class CompanyStorage:
     # Public Methods 
     # ---------------------------------------------------------------------------------------------
 
-    def add_company(self, name, industry=None, country=None):
+    def add_company(self, name, **kwargs):
+        """Insert a new company into the database using dynamic fields."""
+        
+        columns = ", ".join(kwargs.keys())
+        placeholders = ", ".join(["?"] * len(kwargs))
+        values = list(kwargs.values())
+        
+        # Insert new company 
         try:
-            # name     = company.name
-            # industry = None
-            # country  = None
-
-            self.cursor.execute("""
-                INSERT INTO companies (name, industry, country)
-                VALUES (?, ?, ?)
-            """, (name, industry, country))
+            self.cursor.execute(f"""
+                INSERT INTO companies (name, {columns})
+                VALUES (?, {placeholders})
+            """, [name] + values)
             self.conn.commit()
         except sqlite3.IntegrityError:
-            print(f"Company '{name}' already exists.")
+            logger.debug(f"Company '{name}' already exists.")
+        except sqlite3.OperationalError as e:
+            raise ValueError(f"Invalid column or value: {e}")
     # End def add_company
 
     def update_financials(self, name, year, **kwargs):
@@ -129,18 +134,18 @@ class CompanyStorage:
     def delete_company(self, name):
         company_id = self.get_company_id(name)
         if not company_id:
-            print(f"No such company: {name}")
+            logger.debug(f"No such company: {name}")
             return
         self.cursor.execute("DELETE FROM financials WHERE company_id = ?", (company_id,))
         self.cursor.execute("DELETE FROM companies WHERE id = ?", (company_id,))
         self.conn.commit()
-        print(f"Deleted company '{name}' and associated financials.")
+        logger.info(f"Deleted company '{name}' and associated financials.")
     # End def delete_company
 
     def export_company_financials_to_csv(self, name, file_path):
         company_id = self.get_company_id(name)
         if not company_id:
-            print(f"No such company: {name}")
+            logger.warning(f"No such company: {name}")
             return
 
         self.cursor.execute("""
@@ -164,7 +169,7 @@ class CompanyStorage:
             writer = csv.writer(f)
             writer.writerow(headers)
             writer.writerows(rows)
-        print(f"Exported financials for '{name}' to {file_path}")
+        logger.info(f"Exported financials for '{name}' to {file_path}")
     # End def export_company_financials_to_csv
 
     def close(self):
@@ -181,10 +186,19 @@ class CompanyStorage:
             CREATE TABLE IF NOT EXISTS companies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
+                country TEXT,
+                phone TEXT,
+                website TEXT,
                 industry TEXT,
-                country TEXT
+                sector TEXT,
+                region TEXT,
+                full_exchange_name TEXT,
+                exchange_timezone TEXT,
+                isin TEXT,
+                full_time_employees INTEGER
             );
         """)
+
 
         # Create if not exists the time-series financials table
         self.cursor.execute("""

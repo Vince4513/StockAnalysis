@@ -58,7 +58,20 @@ class FinancialDataCleaner:
 
         for year in fiscal_years:
             row = {
-                "name": company_name,
+                # Companies database info
+                "name": raw_data.get("longName", company_name),
+                "country": raw_data.get("country", None),
+                "phone": raw_data.get("phone", None),
+                "website": raw_data.get("website", None),
+                "industry": raw_data.get("industry", None),
+                "sector": raw_data.get("sector", None),
+                "region": raw_data.get("region", None),
+                "full_exchange_name": raw_data.get("fullExchangeName", None),
+                "exchange_timezone": raw_data.get("exchangeTimezoneShortName", None),
+                "isin": raw_data.get("isin", None),
+                "full_time_employees": int(raw_data.get("fullTimeEmployees", None)),
+
+                # Financials database info
                 "year": int(year),  # Use only the year part
                 "share_price": raw_data.get("regularMarketPrice", None),
                 "sales": self._get_nested(income, "Operating Revenue", year),
