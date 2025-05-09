@@ -10,6 +10,16 @@ class TestFinancialDataCleaner(unittest.TestCase):
 
         # Simulate raw JSON data similar to what's returned by the importer
         self.raw_data = {
+            "country": "France", 
+            "phone": "33 7 85 44 11 22", 
+            "website": ".com", 
+            "industry": "Retail", 
+            "sector": "Consulting", 
+            "region": "US", 
+            "fullExchangeName": "Paris",
+            "exchangeTimezoneShortName": "CEST", 
+            "isin": "-", 
+            "fullTimeEmployees": "2990",
             "regularMarketPrice": 52.5,
             "sharesOutstanding": 1000000000,
             "incomestmt": {

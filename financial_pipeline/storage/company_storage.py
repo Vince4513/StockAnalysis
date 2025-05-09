@@ -87,11 +87,18 @@ class CompanyStorage:
         
         # Insert new company 
         try:
-            self.cursor.execute(f"""
-                INSERT INTO companies (name, {columns})
-                VALUES (?, {placeholders})
-            """, [name] + values)
-            self.conn.commit()
+            if len(columns) < 1:
+                self.cursor.execute(f"""
+                    INSERT INTO companies (name)
+                    VALUES (?)
+                """, [name])
+                self.conn.commit()
+            else:
+                self.cursor.execute(f"""
+                    INSERT INTO companies (name, {columns})
+                    VALUES (?, {placeholders})
+                """, [name] + values)
+                self.conn.commit()
         except sqlite3.IntegrityError:
             logger.debug(f"Company '{name}' already exists.")
         except sqlite3.OperationalError as e:

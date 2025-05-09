@@ -69,7 +69,7 @@ class FinancialDataCleaner:
                 "full_exchange_name": raw_data.get("fullExchangeName", None),
                 "exchange_timezone": raw_data.get("exchangeTimezoneShortName", None),
                 "isin": raw_data.get("isin", None),
-                "full_time_employees": int(raw_data.get("fullTimeEmployees", None)),
+                "full_time_employees": int(raw_data.get("fullTimeEmployees", -1)),
 
                 # Financials database info
                 "year": int(year),  # Use only the year part
