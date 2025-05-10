@@ -28,3 +28,11 @@ def insert_cleaned_financials(rows: List[Dict], db_path=None):
 
     db.close()
 # End def insert_cleaned_financials
+
+def chrono(message: str = "") -> None:
+    from datetime import datetime
+
+    now = datetime.now()
+    # now_str = now.strftime("%d-%m-%Y %H:%M:%s")
+    print(f"{now} - {message}\n")
+# End def chrono

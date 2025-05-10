@@ -11,6 +11,7 @@ import logging
 import chardet
 import yfinance as yf
 
+from tqdm import tqdm
 from typing import List
 from pathlib import Path
 from curl_cffi import requests
@@ -57,7 +58,7 @@ class FinancialDataImporter:
         """Sequential download of financials."""
         tickers = tickers or self.retrieve_tickers()
 
-        for ticker in tickers:
+        for ticker in tqdm(tickers):
             self._fetch_ticker_data(ticker)
     # End def retrieve_data
 
@@ -112,7 +113,7 @@ class FinancialDataImporter:
             
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
-            logger.info(f"[✓] Downloaded {ticker}")
+            # logger.info(f"[✓] Downloaded {ticker}")
 
         except Exception as e:
             logger.error(f"[✗] Error downloading {ticker}: {e}")

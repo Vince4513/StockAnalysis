@@ -59,7 +59,7 @@ class FinancialDataCleaner:
         for year in fiscal_years:
             row = {
                 # Companies database info
-                "name": raw_data.get("longName", company_name),
+                "name": company_name,
                 "country": raw_data.get("country", None),
                 "phone": raw_data.get("phone", None),
                 "website": raw_data.get("website", None),
