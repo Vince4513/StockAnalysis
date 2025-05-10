@@ -6,18 +6,16 @@ Cleaning of raw data
 from __future__ import annotations
 
 import logging
-import numpy as np
-import pandas as pd
-from typing import Iterator
 from datetime import datetime
+from typing import Dict, List, Any
 
-from archive.company import Company
 
 # ===========================================================================
 # Constant and global variables
 # ===========================================================================
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # ===========================================================================
 # FinancialDataCleaner Class
@@ -25,228 +23,157 @@ logger = logging.getLogger(__name__)
 
 
 class FinancialDataCleaner:
-    """Extract interesting data from raw data"""
-
-    def __init__(self, **kwargs) -> None:
-        # Raw data 
-        self.tickers_info = kwargs.get('tickers_info', None)
-        self.income_statement = kwargs.get('income_statement', None)
-        self.balance_sheets = kwargs.get('balance_sheets', None)
-    # End def __init__
+    """
+    Cleans raw Yahoo Finance JSON data into structured format
+    suitable for inserting into the database.
+    """
 
     # ===========================================================================
     # Magic Methods
     # ===========================================================================
 
     def __str__(self):
-        return f"Extraction({datetime.now()} - {list(self.tickers_info.keys())})"
+        return f"Extraction({datetime.now()})"
+    # End def __str__
 
     # ===========================================================================
     # Public Methods
     # ===========================================================================
 
-    def extract_all(self) -> Iterator[Company]:
-        # Extract data to company class
-        for company in self.tickers_info:
-            logger.debug(f"Income statement:\n{self.income_statement[company]}")
-            logger.debug(f"Balance sheet   :\n{self.balance_sheets[company].to_string()}")
-            
-            try:
-                # Extract the relevant information
-                actual_share_price  = self.tickers_info[company]['share']
-                sales               = self.__extract_sales(self.income_statement[company])
-                nb_shares_issued    = self.tickers_info[company]['nb_shares']
-                current_assets      = self.__extract_current_assets(self.balance_sheets[company])
-                current_liabilities = self.__extract_current_liabilities(self.balance_sheets[company])
-                financial_debts     = self.__extract_long_term_debt(self.balance_sheets[company])
-                equity              = self.__extract_equity(self.balance_sheets[company])
-                intangible_assets   = self.__extract_goodwill(self.balance_sheets[company])
-                net_income          = self.__extract_net_income(self.income_statement[company])
-                dividends           = self.__extract_dividends(self.tickers_info[company]['dividends'])
-                net_earning_per_share = self.__extract_net_earning_per_share(self.income_statement[company])
+    def extract_all(self, raw_data: Dict[str, Any], company_name: str) -> List[Dict[str, Any]]:
+        """
+        Convert raw Yahoo data to structured financial rows.
+        Each row is a dictionary keyed by your database columns.
+        """
+        financials = []
 
-                # Check if any required information is None in single variable
-                if any(info is None for info in [
-                    actual_share_price, sales, nb_shares_issued, current_assets, 
-                    current_liabilities, financial_debts, equity, intangible_assets]):
-                    print(f"Skipping {company} due to missing data.")
-                    continue  # Skip to the next company if any info is None
-                
-                # Check if any required information is None in pandas dataframe
-                if any(info.isnull().sum() > 0 for info in [net_income, dividends, net_earning_per_share]):
-                    print(f"Skipping {company} due to missing data.")
-                    continue  # Skip to the next company if any info is None
+        # Handle time-series: use income stmt, balance sheet, and dividend dates
+        income = raw_data.get("incomestmt", {})
+        balance = raw_data.get("balancesheet", {})
+        dividends = raw_data.get("dividends", {})
 
-                # If all information is available, create the company object
-                company = Company(
-                    name                = company,
-                    actual_share_price  = actual_share_price,
-                    sales               = sales,
-                    nb_shares_issued    = nb_shares_issued,
+        # Assume all dicts have the same years; use incomestmt keys as base
+        fiscal_years = list(next(iter(income.values())).keys()) if income else []
+        fiscal_years = [year.split("-")[0] for year in fiscal_years]
 
-                    # Balance sheet information
-                    current_assets      = current_assets,
-                    current_liabilities = current_liabilities,
-                    financial_debts     = financial_debts,
-                    equity              = equity,
-                    intangible_assets   = intangible_assets,
-                    
-                    # Arrays
-                    net_income          = net_income,
-                    dividends           = dividends,
-                    net_earning_per_share = net_earning_per_share
-                )
+        for year in fiscal_years:
+            row = {
+                # Companies database info
+                "name": company_name,
+                "country": raw_data.get("country", None),
+                "phone": raw_data.get("phone", None),
+                "website": raw_data.get("website", None),
+                "industry": raw_data.get("industry", None),
+                "sector": raw_data.get("sector", None),
+                "region": raw_data.get("region", None),
+                "full_exchange_name": raw_data.get("fullExchangeName", None),
+                "exchange_timezone": raw_data.get("exchangeTimezoneShortName", None),
+                "isin": raw_data.get("isin", None),
+                "full_time_employees": int(raw_data.get("fullTimeEmployees", -1)),
 
-                # Return company one by one
-                yield company
-                
-            except KeyError as e:
-                print(f"KeyError for company {company}: {e}")
-            except Exception as e:
-                print(f"Error processing company {company}: {e}")
+                # Financials database info
+                "year": int(year),  # Use only the year part
+                "share_price": raw_data.get("regularMarketPrice", None),
+                "sales": self._get_nested(income, "Operating Revenue", year),
+                "shares_issued": raw_data.get("sharesOutstanding", None),
+                "current_assets": self._sum_nested(balance, ["Current Assets", "Other Current Assets"], year),
+                "current_liabilities": self._sum_nested(balance, ["Current Liabilities", "Other Current Liabilities"], year),
+                "financial_debts": self._sum_nested(balance, [
+                    "Derivative Product Liabilities",
+                    "Long Term Debt And Capital Lease Obligation"
+                ], year),
+                "equity": self._get_nested(balance, "Stockholders Equity", year),
+                "intangible_assets": self._get_nested(balance, "Goodwill And Other Intangible Assets", year),
+                "net_income": self._get_nested(income, "Net Income Continuous Operations", year),
+                "dividends": self._sum_dividends(dividends, year),
+                "eps": self._get_nested(income, "Basic EPS", year),
+            }
+            financials.append(row)
+
+        return financials
     # End def extract_all
 
     # ===========================================================================
     # Private Methods
     # ===========================================================================
 
-    def __extract_sales(self,  df: pd.DataFrame) -> float | None:
+    def _get_nested(self, source: Dict, key: str, year: str) -> float:
         try:
-            # Current assets index names
-            lookup_index = ['Operating Revenue']
-
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-
-            # Take only last year and we have only one row 
-            result = sum(filt_df.iloc[:, 0])
-
+            sub_dict = source.get(key, {})
+            for date_str, value in sub_dict.items():
+                if date_str.startswith(year):
+                    return value
         except Exception as e:
-            result = None
-        return result
-    # End def __extract_sales
+            logger.warning(f"Missing key {key} for year {year}: {e}")
+            return None
+    # End def _get_nested
 
-    def __extract_current_assets(self, df: pd.DataFrame) -> float | None:
-        try:
-            # Current assets index names
-            lookup_index = ['Current Assets', 'Other Current Assets']
-
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-            
-            # Take only last year and we sum the 2 rows
-            result = sum(filt_df.iloc[:, 0])
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_current_assets
-
-    def __extract_current_liabilities(self, df: pd.DataFrame) -> float | None:
-        try:
-            # Current liabilities index names
-            lookup_index = ['Current Liabilities', 'Other Current Liabilities']
-            
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-            
-            # Take only last year and we sum the 2 rows
-            result = sum(filt_df.iloc[:, 0])
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_current_liabilities
-
-    def __extract_long_term_debt(self, df: pd.DataFrame) -> float | None:
-        try:
-            # Financial Long term debt index names
-            # 'Long Term Debt' similar to 'Long Term Debt And Capital Lease Obligation' 
-            lookup_index = ['Derivative Product Liabilities', 'Long Term Debt And Capital Lease Obligation']
-
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-            
-            # Take only last year and we sum the 2 rows
-            result = sum(filt_df.iloc[:, 0])
-
-        except Exception:
-            try:
-                filt_df = df.loc['Long Term Debt And Capital Lease Obligation']
-                
-                # Take only last year and we sum the 2 rows
-                result = sum(filt_df.iloc[:, 0])
-            
-            except Exception:
-                result = None
-
-        return result
-    # End def __extract_long_term_debt
-
-    def __extract_equity(self, df: pd.DataFrame) -> float | None:
-        try:
-            lookup_index = ['Stockholders Equity']
-            
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-            
-            # Take only last year and we sum the 2 rows
-            result = sum(filt_df.iloc[:, 0])
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_equity
-
-    def __extract_goodwill(self, df: pd.DataFrame) -> float | None:
-        try:
-            lookup_index = ['Goodwill And Other Intangible Assets']
-
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            filt_df = df.loc[lookup_index]
-            
-            # Take only last year and we sum the 2 rows
-            result = sum(filt_df.iloc[:, 0])
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_goodwill
-
-    def __extract_net_income(self, df: pd.DataFrame) -> pd.DataFrame | None:
-        try:
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            # 'Net Income' possible as well but not same values
-            result = df.loc['Net Income Continuous Operations']
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_net_income
-
-    def __extract_dividends(self, df: pd.DataFrame) -> pd.DataFrame | None:
-        try:
-            # Filter the DataFrame to keep only rows where the index is in look_index
-            # 'Net Income' possible as well but not same values
-            
-            # Sum the values per year
-            df_yearly_sum = df.resample('YE').sum()
-
-        except Exception as e:
-            df_yearly_sum = None
-        return df_yearly_sum
-    # End def __extract_dividends
-
-    def __extract_net_earning_per_share(self, df: pd.DataFrame) -> pd.DataFrame | None:
-        try:
-            # 'Diluted EPS' 
-            result = df.loc['Basic EPS']
-
-        except Exception as e:
-            result = None
-        return result
-    # End def __extract_net_earning_per_share
-# End class Extraction
+    def _sum_nested(self, source: Dict, keys: List[str], year: str) -> float:
+        total = 0.0
+        found = False
+        for key in keys:
+            sub_dict = source.get(key, {})
+            for date_str, value in sub_dict.items():
+                if date_str.startswith(year):
+                    total += value
+                    found = True
+        return total if found else None
+    # End def _sum_nested
+    
+    def _sum_dividends(self, dividends: Dict[str, float], year: str) -> float:
+        year_total = sum(amount for date, amount in dividends.items() if date.startswith(year))
+        return year_total if year_total > 0 else None
+    # End def _sum_dividends
+# End class FinancialDataCleaner
 
 if __name__ == "__main__":
-    FinancialDataCleaner()
+    raw_data = {
+            "regularMarketPrice": 52.5,
+            "sharesOutstanding": 1000000000,
+            "incomestmt": {
+                "Operating Revenue": {
+                    "2023-12-31": 100000000.0
+                },
+                "Net Income Continuous Operations": {
+                    "2023-12-31": 9000000.0
+                },
+                "Basic EPS": {
+                    "2023-12-31": 1.2
+                }
+            },
+            "balancesheet": {
+                "Current Assets": {
+                    "2023-12-31": 5000000.0
+                },
+                "Other Current Assets": {
+                    "2023-12-31": 1000000.0
+                },
+                "Current Liabilities": {
+                    "2023-12-31": 3000000.0
+                },
+                "Other Current Liabilities": {
+                    "2023-12-31": 200000.0
+                },
+                "Stockholders Equity": {
+                    "2023-12-31": 15000000.0
+                },
+                "Derivative Product Liabilities": {
+                    "2023-12-31": 800000.0
+                },
+                "Long Term Debt And Capital Lease Obligation": {
+                    "2023-12-31": 700000.0
+                },
+                "Goodwill And Other Intangible Assets": {
+                    "2023-12-31": 250000.0
+                }
+            },
+            "dividends": {
+                "2023-01-10": 0.5,
+                "2023-04-15": 0.6,
+                "2022-11-10": 0.4
+            }
+        }
+    cleaner = FinancialDataCleaner()
+
+    rows = cleaner.extract_all(raw_data, "Deloitte")
+    logger.info(rows)

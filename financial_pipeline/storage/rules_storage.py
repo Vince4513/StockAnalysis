@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Iterator
 
 from archive.company import Company
-from rules.rules import Rules
+from financial_pipeline.evaluator.graham_evaluator import GrahamEvaluator
 
 # ===========================================================================
 # Constant and global variables
@@ -49,7 +49,7 @@ class RulesStorage:
     # Accessors 
     # ---------------------------------------------------------------------------------------------
     
-    def add_company(self, cursor: sqlite3.Cursor, rule: Rules) -> None:
+    def add_company(self, cursor: sqlite3.Cursor, rule: GrahamEvaluator) -> None:
         
         name          = rule.name
         share_p       = rule.actual_share_price
@@ -139,15 +139,15 @@ class RulesStorage:
         ))
     # End def update_company
 
-    def is_rule(self, cursor: sqlite3.Cursor, rule: Rules) -> bool:
+    def is_rule(self, cursor: sqlite3.Cursor, rule: GrahamEvaluator) -> bool:
         cursor.execute("SELECT COUNT(*) FROM companies WHERE name = ?", (rule.name,))
         return cursor.fetchone()[0]
     # End def is_company
 
-    def get_companies(self) -> Iterator[Rules]:
+    def get_companies(self) -> Iterator[GrahamEvaluator]:
         for c in self.cursor.execute("SELECT * FROM rules").fetchall():
             try:
-                rule = Rules(
+                rule = GrahamEvaluator(
                     name = c[1],
                     last_update = c[3],
                     actual_share_price = c[4],

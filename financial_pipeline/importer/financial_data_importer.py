@@ -11,6 +11,7 @@ import logging
 import chardet
 import yfinance as yf
 
+from tqdm import tqdm
 from typing import List
 from pathlib import Path
 from curl_cffi import requests
@@ -57,7 +58,7 @@ class FinancialDataImporter:
         """Sequential download of financials."""
         tickers = tickers or self.retrieve_tickers()
 
-        for ticker in tickers:
+        for ticker in tqdm(tickers):
             self._fetch_ticker_data(ticker)
     # End def retrieve_data
 
@@ -75,7 +76,7 @@ class FinancialDataImporter:
     def _detect_encoding(self, filepath: str) -> str:
         """Detect file encoding using chardet."""
         with open(filepath, "rb") as f:
-            raw_data = f.read(10000)
+            raw_data = f.read(150000)
         
         return chardet.detect(raw_data)["encoding"]
     # End def detect_encoding
@@ -112,7 +113,7 @@ class FinancialDataImporter:
             
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
-            logger.info(f"[✓] Downloaded {ticker}")
+            # logger.info(f"[✓] Downloaded {ticker}")
 
         except Exception as e:
             logger.error(f"[✗] Error downloading {ticker}: {e}")
@@ -130,9 +131,10 @@ class FinancialDataImporter:
 
 
 if __name__ == '__main__':
-    i = FinancialDataImporter(ticker_source="yh.json")
+    i = FinancialDataImporter(ticker_source=None)
     logger.debug(f"Ticker source: {i.ticker_source}")
     logger.debug(f"Data path: {i.data_path}")
 
     # i.retrieve_tickers()
-    i.parallel_retrieve_data(["TTE.PA", "AI.PA", "SAN.PA", "DG.PA", "OR.PA", "SU.PA"], max_workers=1)
+    i.retrieve_data()
+    # i.parallel_retrieve_data(max_workers=1)
