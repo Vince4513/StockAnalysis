@@ -7,9 +7,9 @@ import os
 import logging
 import numpy as np
 import pandas as pd
-import altair as alt
-import streamlit as st
 import seaborn as sns
+import streamlit as st
+import plotly.express as px
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO)
 # ==================================================================================================================================================
 
 class FinancialDataInterface :
-    """Streamlit application to interact with the backend"""
+    """App displaying financial info from companies"""
 
     def __init__(self, db_path: str | None=None) -> None:
         
@@ -54,24 +54,45 @@ class FinancialDataInterface :
     def run(self):
         st.title("📊 Company Financial Explorer")
 
-        companies = self.db.list_companies()
-        if not companies:
-            st.warning("No companies found in database.")
-            return
+        tab1, tab2 = st.tabs(["📈 Single Company View", "📊 Compare Companies"])
 
-        company_names = [c[1] for c in companies]  # c[1] = name
-        selected_name = st.selectbox("Select a company", company_names)
+        with tab1:
+            self.display_single_company_view()
 
-        # Display info and charts
-        self.display_company_info(selected_name)
-        self.display_financial_charts(selected_name)
+        with tab2:
+            self.display_comparison_view()
     # End def run
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------
     # Private Methods
     # ----------------------------------------------------------------------------------------------------------------------------------------------
     
-    def display_company_info(self, name):
+    # Tab 1: Single Company ----------------------------------
+    
+    def display_single_company_view(self) -> None:
+        companies = self.db.list_companies()
+        if not companies:
+            st.warning("No companies found in database.")
+            return
+
+        company_names = [c[1] for c in companies]
+        selected_name = st.selectbox("Select a company", company_names)
+
+        self.display_company_info(selected_name)
+        df = self.display_financial_charts(selected_name)
+
+        # Export as CSV
+        if df is not None:
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Financials as CSV",
+                data=csv,
+                file_name=f"{selected_name}_financials.csv",
+                mime="text/csv"
+            )
+    # End def display_single_company_view
+
+    def display_company_info(self, name: str) -> None:
         company = self.db.get_company(name)
         if not company:
             st.error("Company not found.")
@@ -128,7 +149,7 @@ class FinancialDataInterface :
                     st.markdown(f"**{label}:** {value}")
     # End def display_company_info
 
-    def display_financial_charts(self, name):
+    def display_financial_charts(self, name: str) -> pd.DataFrame:
         rows = self.db.get_financials(name)
         if not rows:
             st.warning("No financial data available.")
@@ -151,7 +172,80 @@ class FinancialDataInterface :
 
         for metric in selected_metrics:
             st.line_chart(df.set_index("year")[metric])
+
+        return df
     # End def display_financial_charts
+
+    # Tab 2: Compare Companies -------------------------------
+    
+    def display_comparison_view(self) -> None:
+        companies = self.db.list_companies()
+        if len(companies) < 2:
+            st.warning("You need at least two companies in the database to compare.")
+            return
+
+        company_names = [c[1] for c in companies]
+
+        col1, col2 = st.columns(2)
+        with col1:
+            company1 = st.selectbox("Company 1", company_names, key="cmp1")
+        with col2:
+            company2 = st.selectbox("Company 2", company_names, index=1, key="cmp2")
+
+        if company1 == company2:
+            st.warning("Please select two different companies.")
+            return
+
+        df1 = self._get_financial_df(company1)
+        df2 = self._get_financial_df(company2)
+
+        if df1 is None or df2 is None:
+            return
+
+        st.subheader("📊 Metric Comparison Over Time")
+        metrics = ["sales", "net_income", "dividends", "eps", "share_price", "equity"]
+
+        selected_metrics = st.multiselect("Metrics to compare:", metrics, default=["sales", "net_income"])
+
+        for metric in selected_metrics:
+            fig = self._plot_grouped_bar(df1, df2, metric, company1, company2)
+            st.plotly_chart(fig, use_container_width=True)
+    # End def display_comparison_view
+
+    def _get_financial_df(self, company_name: str) -> pd.DataFrame:
+        rows = self.db.get_financials(company_name)
+        if not rows:
+            st.warning(f"No financial data for {company_name}")
+            return None
+
+        columns = [
+            "id", "company_id", "last_update", "year", "share_price", "sales", "shares_issued", "current_assets",
+            "current_liabilities", "financial_debts", "equity", "intangible_assets", "net_income",
+            "dividends", "eps"
+        ]
+        return pd.DataFrame(rows, columns=columns).sort_values("year")
+    # End def _get_financial_df
+
+    def _plot_grouped_bar(self, df1: pd.DataFrame, df2: pd.DataFrame, metric: str, company1: str, company2: str):
+        df1_plot = df1[["year", metric]].copy()
+        df1_plot["company"] = company1
+
+        df2_plot = df2[["year", metric]].copy()
+        df2_plot["company"] = company2
+
+        combined = pd.concat([df1_plot, df2_plot])
+        
+        fig = px.bar(
+            combined,
+            x="year",
+            y=metric,
+            color="company",
+            barmode="group",
+            title=f"{metric.title()} Comparison",
+        )
+
+        return fig
+    # End def plot_grouped_bar
 
     # Old functions
     # def show_tabs(self) -> None:
@@ -278,7 +372,6 @@ class FinancialDataInterface :
     #         pdf.output(f'{title}.pdf')
     # # End def show_report_tab
 # End class FinancialDataInterface
-
 
 
 def run_streamlit_app():
