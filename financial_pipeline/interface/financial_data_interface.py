@@ -429,8 +429,3 @@ class FinancialDataInterface :
     #         pdf.output(f'{title}.pdf')
     # # End def show_report_tab
 # End class FinancialDataInterface
-
-
-def run_streamlit_app():
-    interface = FinancialDataInterface()
-    interface.run()

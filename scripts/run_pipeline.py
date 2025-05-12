@@ -6,7 +6,7 @@ from financial_pipeline.cleaner.financial_data_cleaner import FinancialDataClean
 from financial_pipeline.utils.helpers import insert_cleaned_financials
 
 
-def run():
+def run(db_path: str | None = None) -> None:
     importer = FinancialDataImporter()
     cleaner = FinancialDataCleaner()
 
@@ -15,14 +15,15 @@ def run():
         raw_data = json.load(f)
 
     cleaned_rows = cleaner.extract_all(raw_data, company_name="TTE.PA")
-    insert_cleaned_financials(cleaned_rows)
+    insert_cleaned_financials(cleaned_rows, db_path)
 # End def run
 
-def run_all():
+def run_all(retrieve_data: bool = False, db_path: str | None = None) -> None:
     importer = FinancialDataImporter()
     cleaner = FinancialDataCleaner()
 
-    importer.retrieve_data()
+    if retrieve_data:
+        importer.retrieve_data()
 
     raw_dir = importer.data_path
     json_files = [f for f in os.listdir(raw_dir) if f.endswith(".json")]
@@ -38,6 +39,11 @@ def run_all():
                 raw_data = json.load(f)
             
             company_name = filename.replace(".json", "")
+            
+            # Filter on Paris stock market 
+            if ".PA" not in company_name:
+                 continue 
+            
             cleaned_rows = cleaner.extract_all(raw_data, company_name)
             all_rows.extend(cleaned_rows)
 
@@ -46,8 +52,9 @@ def run_all():
         except Exception as e:
             print(f"[✗] Failed to process {filename}: {e}")
 
-    insert_cleaned_financials(all_rows)
+    insert_cleaned_financials(all_rows, db_path)
 # End def run_all
 
 if __name__ == "__main__":
-    run_all()
+    db_path = "data/processed/production.db"
+    run_all(retrieve_data=False, db_path=db_path)
