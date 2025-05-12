@@ -5,20 +5,18 @@ Interface class
 
 import os
 import logging
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import streamlit as st
 import plotly.express as px
 import matplotlib.pyplot as plt
 from pathlib import Path
-from datetime import datetime
 
 # from financial_pipeline.ml.models import Models
-# from financial_pipeline.rules.rules import Rules
 # from financial_pipeline.interface.reports import PDF
 
 from financial_pipeline.storage.company_storage import CompanyStorage
+from financial_pipeline.evaluator.graham_evaluator import GrahamEvaluator
 
 # ===========================================================================
 # Constant and global variables

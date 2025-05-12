@@ -5,7 +5,7 @@ Module containing the rules
 
 import logging
 import pandas as pd
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from financial_pipeline.storage.company_storage import CompanyStorage
 
@@ -47,7 +47,7 @@ class GrahamEvaluator:
         """Evaluate a company against Graham’s rules."""
         rows = self.db.get_financials(company_name)
         if not rows:
-            return {"error": f"No financials found for {company_name}"}
+            raise ValueError(f"No financials found for {company_name}")
 
         columns = [
             "id", "company_id", "last_update", "year", "share_price", "sales", "shares_issued", "current_assets",
@@ -77,12 +77,12 @@ class GrahamEvaluator:
     
     # Rule 1: Sales > 100M (50M for utilities — not handled yet)
     def _check_sales(self, df: pd.DataFrame) -> Dict:
-        recent = df[df["year"] >= df["year"].max() - 1]
-        passed = recent["sales"].mean() >= 100_000_000
+        latest = df[df["year"] == df["year"].max()].iloc[0]
+        passed = latest["sales"] >= 100_000_000
         return {
             "passed": passed,
-            "description": "Average sales in last 2 years > 100M",
-            "value": round(recent["sales"].mean(), 2)
+            "description": "Sales in the most recent year > 100M",
+            "value": round(latest["sales"], 2)
         }
     # End def _check_sales
 
@@ -92,8 +92,8 @@ class GrahamEvaluator:
         ca = latest["current_assets"]
         cl = latest["current_liabilities"]
         fd = latest["financial_debts"]
-        lhs = ca - fd
-        passed = ca >= 2 * cl and fd <= lhs
+        wc = ca - cl
+        passed = ca >= 2 * cl and fd <= wc
         return {
             "passed": passed,
             "description": "Current assets ≥ 2 × current liabilities and financial debt ≤ (CA - CL)",
@@ -104,6 +104,15 @@ class GrahamEvaluator:
     # Rule 3: Net income > 0 for 10 years
     def _check_positive_income(self, df: pd.DataFrame) -> Dict:
         recent = df[df["year"] >= df["year"].max() - 9]
+
+        # Check we have 10 years of data
+        if len(recent) < 10:
+            return {
+                "passed": False,
+                "description": "Requires uninterrupted net_income for 10 years — not enough data",
+                "value": f"Only {len(recent)} years of data available"
+            }
+    
         passed = (recent["net_income"] > 0).all()
         return {
             "passed": passed,
@@ -115,6 +124,15 @@ class GrahamEvaluator:
     # Rule 4: Dividends paid every year for 20 years
     def _check_dividend_history(self, df: pd.DataFrame) -> Dict:
         recent = df[df["year"] >= df["year"].max() - 19]
+
+        # Check we have 20 years of data
+        if len(recent) < 20:
+            return {
+                "passed": False,
+                "description": "Requires uninterrupted dividends for 20 years — not enough data",
+                "value": f"Only {len(recent)} years of data available"
+            }
+
         passed = (recent["dividends"] > 0).all()
         return {
             "passed": passed,
@@ -128,8 +146,11 @@ class GrahamEvaluator:
         if len(df) < 10:
             return {"passed": False, "description": "Not enough years of data", "value": None}
 
-        eps_first_3 = df.head(3)["eps"].mean()
-        eps_last_3 = df.tail(3)["eps"].mean()
+        # Select last 10 years
+        recent = df.tail(10)
+
+        eps_first_3 = recent.head(3)["eps"].mean()
+        eps_last_3 = recent.tail(3)["eps"].mean()
         passed = eps_last_3 >= eps_first_3 * 1.33
         return {
             "passed": passed,
@@ -142,7 +163,7 @@ class GrahamEvaluator:
     def _check_eps_price_ratio(self, df: pd.DataFrame) -> Dict:
         eps = df.tail(3)["eps"].mean()
         price = df.iloc[-1]["share_price"]
-        ratio = price / eps if eps else float("inf")
+        ratio = price / eps if eps and eps > 0 else float("inf")
         passed = ratio <= 15
         return {
             "passed": passed,
@@ -174,14 +195,17 @@ class GrahamEvaluator:
         intangibles = latest["intangible_assets"]
         shares = latest["shares_issued"]
 
-        per = price / eps if eps else float("inf")
-        pbr = (price * shares) / (equity - intangibles) if equity - intangibles else float("inf")
-        value = per * pbr
+        self.per = price / eps if eps and eps > 0 else float("inf")
+        self.pbr = (price * shares) / (equity - intangibles) if equity - intangibles else float("inf")
+        value = self.per * self.pbr
         passed = value <= 22.5
         return {
             "passed": passed,
             "description": "PER × PBR ≤ 22.5",
-            "value": f"{per:.2f} × {pbr:.2f} = {value:.2f}"
+            "value": f"{self.per:.2f} × {self.pbr:.2f} = {value:.2f}"
         }
     # End def _check_bonus_rule
 # End class GrahamEvaluator
+
+if __name__ == '__main__':
+    g = GrahamEvaluator()

@@ -83,5 +83,5 @@ For this project, I will keep *yf.Ticker(ticker).incomestmt* but it's possible t
 
 - net income / dividends / net earning per share are all stored under a pandas Dataframe with a datetime64[ns] type index.
 
-python -m scripts.run_pipeline
+python -m scripts.run_pipeline  
 streamlit run .\scripts\run_streamlit.py

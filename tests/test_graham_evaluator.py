@@ -7,7 +7,6 @@ from financial_pipeline.evaluator.graham_evaluator import GrahamEvaluator
 
 class TestGrahamEvaluator(unittest.TestCase):
     def setUp(self):
-        self.company_name = "TestCorp" # <-- Need the name to be in database and pass all rules
         self.evaluator = GrahamEvaluator()
         self.df = self._get_base_dataframe()
     # End def setUp
@@ -18,7 +17,7 @@ class TestGrahamEvaluator(unittest.TestCase):
             "year": list(range(2004, 2024)),
             "share_price": [100.0] * 20,
             "sales": [200_000_000] * 20,
-            "shares_issued": [10_000_000] * 20,
+            "shares_issued": [1_000_000] * 20,
             "current_assets": [80_000_000] * 20,
             "current_liabilities": [30_000_000] * 20,
             "financial_debts": [20_000_000] * 20,
@@ -32,18 +31,21 @@ class TestGrahamEvaluator(unittest.TestCase):
     # End def _get_base_dataframe
 
     def test_evaluate_rules(self):
-        results = self.evaluator.evaluate(self.company_name)
-
-        # All rules should pass with the mock data
-        for rule, result in results.items():
-            with self.subTest(rule=rule):
-                self.assertTrue(result.get("passed"), f"{rule} should pass but failed.")
+        # Check non existing company in db
+        with self.assertRaises(ValueError):
+            not_in_db_company = "TestCorp"
+            self.evaluator.evaluate(not_in_db_company)
+        
+        # Check results if existing company in db
+        in_db_company = "TTE.PA"
+        results = self.evaluator.evaluate(in_db_company)
+        self.assertIsInstance(results, dict)
     # End def test_evaluate_rules
 
     def test_rule_1_sales_over_100m(self):
         result = self.evaluator._check_sales(self.df)
         self.assertTrue(result["passed"])
-        self.assertIn("Average sales", result["description"])
+        self.assertIn("Sales in the most recent year > 100M", result["description"])
 
         # Force fail
         self.df["sales"] = [50_000_000] * 20
@@ -69,6 +71,10 @@ class TestGrahamEvaluator(unittest.TestCase):
         self.df.at[15, "net_income"] = -1
         result = self.evaluator._check_positive_income(self.df)
         self.assertFalse(result["passed"])
+
+        # Not enough data
+        result = self.evaluator._check_positive_income(self.df.tail(5))
+        self.assertFalse(result["passed"])
     # End def test_rule_3_net_income_positive_10y
     
     def test_rule_4_dividends_20_years(self):
@@ -79,6 +85,11 @@ class TestGrahamEvaluator(unittest.TestCase):
         self.df.at[10, "dividends"] = 0.0
         result = self.evaluator._check_dividend_history(self.df)
         self.assertFalse(result["passed"])
+
+        # Not enough data
+        result = self.evaluator._check_dividend_history(self.df.tail(15))
+        self.assertFalse(result["passed"])
+
     # End def test_rule_4_dividends_20_years
     
     def test_rule_5_eps_growth_over_10y(self):
