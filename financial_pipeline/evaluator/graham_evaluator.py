@@ -7,6 +7,7 @@ import logging
 import pandas as pd
 from typing import Dict, Any
 
+from financial_pipeline.utils.helpers import get_safe_values
 from financial_pipeline.storage.company_storage import CompanyStorage
 
 # ===========================================================================
@@ -89,9 +90,21 @@ class GrahamEvaluator:
     # Rule 2: Current Ratio = 2x (current assets - financial debts) >= current liabilities
     def _check_current_ratio(self, df: pd.DataFrame) -> Dict:
         latest = df.iloc[-1]
-        ca = latest["current_assets"]
-        cl = latest["current_liabilities"]
-        fd = latest["financial_debts"]
+        keys = ["current_assets", "current_liabilities", "financial_debts"]
+        has_data, values = get_safe_values(latest, keys)
+
+        if not has_data:
+            return {
+                "passed": False,
+                "description": "Current assets ≥ 2 × current liabilities and financial debt ≤ (CA - CL)",
+                "value": "Some data is missing (CA, CL, or FD is null)"
+            }
+        
+        # Perform calculus
+        ca = values["current_assets"]
+        cl = values["current_liabilities"]
+        fd = values["financial_debts"]
+
         wc = ca - cl
         passed = ca >= 2 * cl and fd <= wc
         return {
@@ -109,7 +122,7 @@ class GrahamEvaluator:
         if len(recent) < 10:
             return {
                 "passed": False,
-                "description": "Requires uninterrupted net_income for 10 years — not enough data",
+                "description": "Requires uninterrupted net_income for 10 years",
                 "value": f"Only {len(recent)} years of data available"
             }
     
@@ -129,7 +142,7 @@ class GrahamEvaluator:
         if len(recent) < 20:
             return {
                 "passed": False,
-                "description": "Requires uninterrupted dividends for 20 years — not enough data",
+                "description": "Requires uninterrupted dividends for 20 years",
                 "value": f"Only {len(recent)} years of data available"
             }
 
@@ -144,7 +157,11 @@ class GrahamEvaluator:
     # Rule 5: EPS growth: Avg last 3 > Avg first 3 by +33%
     def _check_eps_growth(self, df: pd.DataFrame) -> Dict:
         if len(df) < 10:
-            return {"passed": False, "description": "Not enough years of data", "value": None}
+            return {
+                "passed": False, 
+                "description": "Requires 10 years of eps data", 
+                "value": f"Only {len(df)} years of data available"
+            }
 
         # Select last 10 years
         recent = df.tail(10)
@@ -159,10 +176,20 @@ class GrahamEvaluator:
         }
     # End def _check_eps_growth
 
-    # Rule 6: Avg EPS (last 3) / current price ≤ 15
+    # Rule 6: Current price / Avg EPS (last 3) ≤ 15
     def _check_eps_price_ratio(self, df: pd.DataFrame) -> Dict:
         eps = df.tail(3)["eps"].mean()
-        price = df.iloc[-1]["share_price"]
+        latest = df.iloc[-1]
+        keys = ["share_price"]
+        has_data, values = get_safe_values(latest, keys)
+
+        if not has_data:
+            return {
+                "passed": False,
+                "description": "P/E ratio (3-year avg) ≤ 15",
+                "value": "Some required financial data is missing."
+            }
+        price = values["share_price"]
         ratio = price / eps if eps and eps > 0 else float("inf")
         passed = ratio <= 15
         return {
@@ -175,10 +202,21 @@ class GrahamEvaluator:
     # Rule 7: Market Cap / Net Book Value (less intangibles) < 1.5
     def _check_valuation_ratio(self, df: pd.DataFrame) -> Dict:
         latest = df.iloc[-1]
-        market_cap = latest["shares_issued"] * latest["share_price"]
-        tangible_equity = latest["equity"] - latest["intangible_assets"]
-        ratio = market_cap / tangible_equity if tangible_equity else float("inf")
+        keys = ["shares_issued", "share_price", "equity", "intangible_assets"]
+        has_data, values = get_safe_values(latest, keys)
+
+        if not has_data:
+            return {
+                "passed": False,
+                "description": "Market cap / tangible equity ≤ 1.5",
+                "value": "Some required financial data is missing."
+            }
+
+        market_cap = values["shares_issued"] * values["share_price"]
+        tangible_equity = values["equity"] - values["intangible_assets"]
+        ratio = market_cap / tangible_equity if tangible_equity and tangible_equity > 0 else float("inf")
         passed = ratio <= 1.5
+
         return {
             "passed": passed,
             "description": "Market cap / tangible equity ≤ 1.5",
@@ -190,19 +228,30 @@ class GrahamEvaluator:
     def _check_bonus_rule(self, df: pd.DataFrame) -> Dict:
         eps = df.tail(3)["eps"].mean()
         latest = df.iloc[-1]
-        price = latest["share_price"]
-        equity = latest["equity"]
-        intangibles = latest["intangible_assets"]
-        shares = latest["shares_issued"]
+        keys = ["share_price", "equity", "intangible_assets", "shares_issued"]
+        has_data, values = get_safe_values(latest, keys)
 
-        self.per = price / eps if eps and eps > 0 else float("inf")
-        self.pbr = (price * shares) / (equity - intangibles) if equity - intangibles else float("inf")
-        value = self.per * self.pbr
+        if not has_data:
+            return {
+                "passed": False,
+                "description": "PER × PBR ≤ 22.5",
+                "value": "Some required financial data is missing."
+            }
+        
+        price = values["share_price"]
+        equity = values["equity"]
+        intangibles = values["intangible_assets"]
+        shares = values["shares_issued"]
+        tangible_equity = equity - intangibles
+
+        per = price / eps if eps and eps > 0 else float("inf")
+        pbr = (price * shares) / tangible_equity if tangible_equity and tangible_equity > 0 else float("inf")
+        value = per * pbr
         passed = value <= 22.5
         return {
             "passed": passed,
             "description": "PER × PBR ≤ 22.5",
-            "value": f"{self.per:.2f} × {self.pbr:.2f} = {value:.2f}"
+            "value": f"{per:.2f} × {pbr:.2f} = {value:.2f}"
         }
     # End def _check_bonus_rule
 # End class GrahamEvaluator

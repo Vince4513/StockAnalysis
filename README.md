@@ -47,7 +47,7 @@ Save all that data in a SQL database with date of extraction
 3. Net income > 0 for 10 consecutive years
 4. Uninterrupted dividends for 20 years
 5. Average of first 3 years - Average of last 3 years - Earnings Per Share +33% over 10 years
-6. Average of last 3 years EPS / current price <= 15
+6. Current price / Average of last 3 years EPS <= 15
 7. Market capitalization (nb_shares x current price) / Net book value of shareholders' equity (less intangible assets) < 1.5
 --> PER x PBR <= 22.5
 
@@ -57,7 +57,7 @@ Save all that data in a SQL database with date of extraction
 3. Résultat net > 0 sur 10 ans consécutifs
 4. Dividendes ininterrompu sur 20 ans
 5. Moyenne des 3 premières années - Moyenne des 3 dernières années - Bénéfice Net Par Action +33% sur 10 ans
-6. Moyenne des 3 dernières années BNPA / cours actuel <= 15
+6. Cours actuel / Moyenne des 3 dernières années BNPA <= 15
 7. Capitalisation boursière (nb_titres x cours actuel) / Valeur nette comptable  des capitaux propres (déduction faite des immobilisations incorporelles) < 1.5
 --> PER x PBR <= 22.5
 

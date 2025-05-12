@@ -52,13 +52,20 @@ class FinancialDataInterface :
     def run(self):
         st.title("📊 Company Financial Explorer")
 
-        tab1, tab2 = st.tabs(["📈 Single Company View", "📊 Compare Companies"])
+        tab1, tab2, tab3 = st.tabs([
+            "📈 Single Company View", 
+            "📊 Compare Companies",
+            "🧠 Graham Evaluation"
+        ])
 
         with tab1:
             self.display_single_company_view()
 
         with tab2:
             self.display_comparison_view()
+        
+        with tab3:
+            self.display_graham_analysis()
     # End def run
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -245,23 +252,92 @@ class FinancialDataInterface :
         return fig
     # End def plot_grouped_bar
 
-    # Old functions
-    # def show_tabs(self) -> None:
-    #     """Display the tabs of the streamlit app"""
+    # Tab 3: Graham Evaluator --------------------------------
 
-    #     st.title("Stock Analysis Dashboard")
-    #     st.markdown("_Prototype v0.1.0_")
+    def display_graham_analysis(self) -> None:
+        st.header("🧠 Graham Value Investing Criteria")
 
-    #     raw_data_tab, plots, rules_tab, regression_tab, report_tab = st.tabs(
-    #         ["Upload", "Plots", "7 Rules", "Regression", "Reports"])
+        evaluator = GrahamEvaluator(self.db_path)
+        companies = self.db.list_companies()
+        company_names = [c[1] for c in companies]
 
-    #     df = self.show_raw_data_tab(raw_data_tab)
-    #     # self.show_graphs(plots, df)
-    #     # self.show_kpi_tab(kpi_tab)
-    #     self.show_rules_tab(rules_tab, df)
-    #     # self.show_regres_tab(regression_tab, df)
-    #     # self.show_report_tab(report_tab, df)
-    # # End def show_tabs
+        selected = st.selectbox("Select a company to evaluate", company_names)
+        results = evaluator.evaluate(selected)
+
+        st.subheader(f"📄 Results for {selected}")
+        passed_count = 0
+
+        for rule, outcome in results.items():
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                st.markdown("✅" if outcome["passed"] else "❌")
+            with col2:
+                st.markdown(f"**{rule}** — {outcome['description']}")
+                st.caption(f"Result: {outcome['value']}")
+            passed_count += int(outcome["passed"])
+
+        st.success(f"✅ {passed_count} / 8 rules passed")
+
+        st.markdown("---")
+
+        self._top10_graham_score(evaluator, company_names)
+
+        st.markdown("---")
+        
+        self._heatmap_graham_score(evaluator, company_names)
+    # End def display_graham_analysis
+
+    def _top10_graham_score(self, evaluator: GrahamEvaluator, company_names: list):
+        # TOP 10 Companies by score
+        st.subheader("🏅 Top 10 Companies by Graham Score")
+
+        company_scores = []
+        for name in company_names:
+            res = evaluator.evaluate(name)
+            score = sum(1 for r in res.values() if isinstance(r, dict) and r.get("passed"))
+            company_scores.append((name, score))
+
+        top_companies = sorted(company_scores, key=lambda x: x[1], reverse=True)[:10]
+        st.table(pd.DataFrame(top_companies, columns=["Company", "Rules Passed"]))
+    # End def _top10_graham_score
+
+    def _heatmap_graham_score(self, evaluator: GrahamEvaluator, company_names: list):
+        st.subheader("🔍 Graham Rule Heatmap")
+
+        heatmap_data = {}
+        for name in company_names:
+            res = evaluator.evaluate(name)
+            heatmap_data[name] = {
+                rule: int(outcome.get("passed", False)) for rule, outcome in res.items() if isinstance(outcome, dict)
+            }
+
+        df_heatmap = pd.DataFrame(heatmap_data).T  # rows=companies, cols=rules
+
+        start = st.slider("Start index", 0, len(df_heatmap) - 5, 0)
+        end = st.slider("End index", start + 1, len(df_heatmap), start + 10)
+        
+        df_subset = df_heatmap.iloc[start:end]
+
+        # Flip axes so companies are on Y, rules on X
+        fig = px.imshow(
+            df_subset.values,
+            labels=dict(x="Rules", y="Companies", color="Pass"),
+            x=df_subset.columns,
+            y=df_subset.index,
+            color_continuous_scale=["#cd3232", "#32cd32"],  # red (fail) → green (pass)
+            text_auto=True,
+            aspect="auto"
+        )
+
+        fig.update_layout(
+            title="Graham Rule Pass/Fail Heatmap",
+            xaxis_side="top",
+            margin=dict(l=10, r=10, t=40, b=10)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+    # End def _heatmap_graham_score
+
 
     # def show_raw_data_tab(self, tab) -> pd.DataFrame:
     #     with tab:
@@ -305,23 +381,6 @@ class FinancialDataInterface :
     #         # sns.heatmap(df.corr(), annot=True, ax=ax)
     #         # st.pyplot(fig)
     # # End def show_graphs
-
-    # def show_rules_tab(self, tab, df: pd.DataFrame) -> None:
-    #     with tab:
-    #         st.header("7 Rules")
-            
-    #         try:
-    #             # Connect to Rules module ----------------------------------
-    #             Rule = Rules()
-    #             Rule.determine_rules(df)
-    #             chrono("Rules determined !")
-
-    #             st.dataframe(Rule.df_rules)
-    #             st.write(Rule.PER, Rule.PBR)
-                
-    #         except Exception as e:
-    #             st.write(f"Error: {e}")
-    # # End def show_rules_tab
 
     # def show_regres_tab(self, tab, df: pd.DataFrame) -> None:
     #     with tab:
