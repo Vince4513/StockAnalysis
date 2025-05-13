@@ -6,10 +6,8 @@ Interface class
 import os
 import logging
 import pandas as pd
-import seaborn as sns
 import streamlit as st
 import plotly.express as px
-import matplotlib.pyplot as plt
 from pathlib import Path
 
 # from financial_pipeline.ml.models import Models
