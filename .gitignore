@@ -166,4 +166,5 @@ cython_debug/
 #.idea/
 
 # Don't load data files
-data/
+data/raw/
+data/processed/test.db
