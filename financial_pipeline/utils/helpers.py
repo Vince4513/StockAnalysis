@@ -1,4 +1,6 @@
+import pandas as pd
 from typing import List, Dict
+
 from financial_pipeline.storage.company_storage import CompanyStorage
 
 
@@ -28,6 +30,22 @@ def insert_cleaned_financials(rows: List[Dict], db_path=None):
 
     db.close()
 # End def insert_cleaned_financials
+
+def get_safe_values(row, keys: List[str]) -> tuple[bool, Dict]:
+    """
+    Safely extract values from a row and check for missing (None or NaN) data.
+
+    Returns:
+        (has_all_data: bool, values: list or dict)
+    """
+    values = {}
+    for key in keys:
+        val = row.get(key)
+        if pd.isna(val):
+            return False, {}
+        values[key] = val
+    return True, values
+# End def get_safe_values
 
 def chrono(message: str = "") -> None:
     from datetime import datetime

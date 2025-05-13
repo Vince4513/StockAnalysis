@@ -1,23 +1,36 @@
-[tool.poetry]
+[project]
 name = "stock-analysis"
-version = "0.1.0"
-description = ""
-authors = ["Vincent Reau <vincent.reau1@gmail.com>"]
+version = "1.0.0"
+description = "Fundamental analysis of companies based on 'The Intelligent Investor' book from Benjamin Graham."
+authors = [
+    { name = "Vincent Réau", email = "vincent.reau1@gmail.com"},]
+maintainers = [
+    { name = "Vincent Réau", email = "vincent.reau1@gmail.com"},]
+requires-python = ">=3.10"
+license = { text = "MIT" }
 readme = "README.md"
 
+dependencies = [
+    "numpy >= 1.26.4",
+    "pandas >= 2.2.2",
+    "setuptools >=70.0.0",
+    "yfinance == 0.2.58",
+    "chardet >= 5.2.0",
+    "streamlit >= 1.38.0",
+    "curl-cffi >= 0.10.0",
+    "tqdm >= 4.67.1",
+    "plotly >= 6.0.1",
+    "scikit-learn >= 1.6.1",
+    "fpdf2 >= 2.8.3",
+]
+
 [tool.poetry.dependencies]
-python = "^3.12"
-numpy = "^1.26.4"
-pandas = "^2.2.2"
-setuptools = "^70.0.0"
-polygon-api-client = "^1.13.7"
-yfinance = "0.2.58"
-chardet = "^5.2.0"
-streamlit = "^1.38.0"
-curl-cffi = "^0.10.0"
-seaborn = "^0.13.2"
-tqdm = "^4.67.1"
-plotly = "^6.0.1"
+python = ">=3.10,<4.0"
+
+[project.urls]
+homepage = "https://stockanalysis-dd27.onrender.com"
+repository = "https://github.com/Vince4513/StockAnalysis"
+"Bug Tracker" = "https://github.com/Vince4513/StockAnalysis/issues"
 
 [tool.setuptools]
 packages = ["financial_pipeline", "scripts"]
