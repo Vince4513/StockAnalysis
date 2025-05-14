@@ -1,87 +1,144 @@
-# StockAnalysis
-Retrieve the current share price and the financial results pdf of companies we want more knowledge on. That way we can select the one that are underrated with KPI based on Benjamin Graham's book "The Intelligent Investor".
+# 🧠 Graham-Based Financial Analysis Tool
+
+This project is a full-stack financial data pipeline that imports, cleans, stores, analyzes, and visualizes company financials based on **Benjamin Graham’s investment principles** (from *The Intelligent Investor*).
+
+It provides a **Streamlit dashboard** to explore financials, compare companies, and evaluate them against 7 key Graham rules (+1 bonus rule).
+
+You can test for yourself here : [Web application](https://stockanalysis-dd27.onrender.com/)
+
+---
+
+## 📊 Features
+
+- 🔄 **Automated data importer** from Yahoo Finance using `yfinance`
+- 🧹 **Financial data cleaner** to structure and normalize key metrics
+- 🗃️ **SQLite storage** with normalized schema
+- 🧠 **Graham Evaluator** for applying value investing rules:
+  - Sales threshold
+  - Debt ratios
+  - Earnings stability
+  - Dividend history
+  - EPS growth and valuation metrics
+- 🖥️ **Streamlit dashboard**:
+  - View company info & financial charts
+  - Compare 2 companies side-by-side
+  - Evaluate Graham rules + heatmap across all companies
+  - Export to CSV
 
 
-## Reality 
-1. [x] Find a list of stock tickers  
-2. [x] Retrieve data with API Yahoo finance  
- - Lots of info in ticker.info(address, country, website, dividends, ...)  
-3. [x] Store Company in a datastore  
-4. [ ] Apply the rules
 
-Check the None's in the retrieving data part
-Do some plots 
-Solve the None <= float problem in Rules
-Add a report button to download pdf with a summary and 1 detailled page per company 
+## 📁 Project Structure
 
-## Plan 
-1. API Yahoo finance  
-How to find all the PARIS tickers ? 
-    - [x] Current Share price
-    - [x] Number of shares issued (Nombres de titres émis) 
-    - [x] Bilan comptable  
-    - [x] compte de résultat
+financial_pipeline/  
+├── cleaner/ # Cleans raw data into structured format   
+├── evaluator/ # GrahamEvaluator logic (investment rules)  
+├── importer/ # FinancialDataImporter using yfinance  
+├── interface/ # Streamlit UI logic  
+├── ml/ # In working progress (Clustering)  
+├── storage/ # CompanyStorage class (SQLite backend)  
+├── utils/ # Helpers: parsing, insertion, formatting  
+scripts/  
+└── run_pipeline.py # Entrypoint for launching database ingestion 
+└── run_streamlit.py # Entrypoint for launching Streamlit app  
+tests/  
+└── test_* # Unit tests for core modules  
+LICENSE  
+poetry.lock  
+pyproject.toml # Package setup  
+README.md  
 
-2. PDF data Extraction
-    - Sales (CA)
-    - Current assets (actif circulant)
-    - Current liabilities (passif circulant)
-    - Financial debts (dettes financières long terme)
-    - Net income for the last 10 years (résultat net)
-    - Dividends for the last 10 years (dividendes)
-    - Net earnings per share (Bénéfice Net Par Action)
-    - Number of shares issued (Nombres de titres émis)
-    - Shareholders' equity (Capitaux propres)
-    - Intangible assets (Immobilisations incorporelles / Goodwill)
-Save all that data in a SQL database with date of extraction
 
-3. Determine companies value
-    - Calculate with values obtained the 7 rules and give a score.
-    
-4. Indicate which companies are overrated and which are underrated
-    - Django website
 
-## 7 Rules
-1. Sales > 100 million (and also 50 million assets for utilities)
-2. Current assets = 2 x Current liabilities - Financial debts <= (Current assets - Current liabilities)
-3. Net income > 0 for 10 consecutive years
-4. Uninterrupted dividends for 20 years
-5. Average of first 3 years - Average of last 3 years - Earnings Per Share +33% over 10 years
-6. Current price / Average of last 3 years EPS <= 15
-7. Market capitalization (nb_shares x current price) / Net book value of shareholders' equity (less intangible assets) < 1.5
---> PER x PBR <= 22.5
+## 🚀 Getting Started
 
-# 
-1. Chiffres d'affaires > 100 millions (et également 50 millions d'actifs pour les services publics)
-2. Actif circulant = 2 x Passif circulant - Dettes financières <= (Actif circulant - Passif circulant)
-3. Résultat net > 0 sur 10 ans consécutifs
-4. Dividendes ininterrompu sur 20 ans
-5. Moyenne des 3 premières années - Moyenne des 3 dernières années - Bénéfice Net Par Action +33% sur 10 ans
-6. Cours actuel / Moyenne des 3 dernières années BNPA <= 15
-7. Capitalisation boursière (nb_titres x cours actuel) / Valeur nette comptable  des capitaux propres (déduction faite des immobilisations incorporelles) < 1.5
---> PER x PBR <= 22.5
+### 1. Clone the repository
 
-## 
-In google, type:
-1. [company name] share price
+```bash
+git clone https://github.com/Vince4513/StockAnalysis.git
+cd stock_analysis
+```
+### 2. Install dependencies
 
-1. [company name] financial results :pdf
-Depends on the company website:
-2. on the website, Annual results -> FY [year] 
+```bash
+poetry install
+```
 
-## Documentation
-[Medium Context](https://medium.com/@aguimarneto/python-stock-price-apis-e67d5310f6e3)  
-[YAHOO Market Place](https://fr.aide.yahoo.com/kb/SLN2310.html#/)  
-[Documentation & Code - yfinance](https://github.com/ranaroussi/yfinance/tree/main)  
+### 3. Launch Streamlit dashboard
 
-### Notes
-In the project, when we retrieve the data, there is 2 ways to achieve the same purpose:  
-- First, using *yf.Ticker(ticker).incomestmt*  
-- Second, using *yf.Ticker(ticker).financials*  
+```bash
+streamlit run scripts/run_streamlit.py
+```
 
-For this project, I will keep *yf.Ticker(ticker).incomestmt* but it's possible to retrieve with *yf.Ticker(ticker).financials* (same data).  
+### 🧪 Running Tests
 
-- net income / dividends / net earning per share are all stored under a pandas Dataframe with a datetime64[ns] type index.
+```bash
+python -m unittest discover -s tests
+```
 
-python -m scripts.run_pipeline  
-streamlit run .\scripts\run_streamlit.py
+
+## 📦 Core Technologies
+| Area         | Tools                                                      |
+|--------------|------------------------------------------------------------|
+| Data Import  | [yfinance](https://pypi.org/project/yfinance/)             |
+| Storage      | SQLite + custom schema                                     |
+| Cleaning     | Custom parsing logic                                       |
+| Interface    | [Streamlit](https://streamlit.io/), [Plotly](https://plotly.com/) |
+| Evaluation   | Benjamin Graham's "The Intelligent Investor"               |
+
+
+## 📘 Graham’s 7 (+1) Investment Rules
+
+Each company is evaluated against these rules:
+
+1. Sales > $100M (or $50M for utilities)
+
+2. Current ratio + low financial debt
+
+3. 10 years of positive net income
+
+4. 20 years of uninterrupted dividends
+
+5. EPS growth of 33% over last 10 years
+
+6. P/E ratio ≤ 15
+
+7. P/B ratio × shares ≤ 1.5
+
+8. Bonus Rule: P/E × P/B ≤ 22.5
+
+## 🧠 Why This Project?
+
+This tool is ideal for:
+
+- Value investors and finance students
+
+- Data scientists exploring financial data pipelines
+
+- Anyone building an integrated dashboard from raw financial data to actionable insights
+
+
+## 📃 License
+
+This project is licensed under the MIT License.  
+
+
+## 🙋‍♂️ Acknowledgments  
+
+- Benjamin Graham's The Intelligent Investor
+
+- Yahoo Finance for data APIs
+
+- yfinance, streamlit, plotly, sqlite3
+
+
+## 📄 Disclaimer
+
+This project uses financial data obtained through the open-source [`yfinance`](https://pypi.org/project/yfinance/) library, which accesses publicly available Yahoo Finance APIs.
+
+- Yahoo!, Y!Finance, and Yahoo! finance are registered trademarks of Yahoo, Inc.
+- `yfinance` is not affiliated, endorsed, or vetted by Yahoo, Inc.
+- This project is intended **strictly for educational and research purposes**.
+
+Please review Yahoo’s [Terms of Use](https://legal.yahoo.com/us/en/yahoo/terms/product-atos/index.html) for details on your rights to use the data.
+
+📌 **The Yahoo Finance API is intended for personal use only.**
