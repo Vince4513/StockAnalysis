@@ -3,18 +3,20 @@
 Interface class
 """
 
-import os
 import logging
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-from pathlib import Path
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
 
 # from financial_pipeline.ml.models import Models
 # from financial_pipeline.interface.reports import PDF
 
 from financial_pipeline.storage.company_storage import CompanyStorage
 from financial_pipeline.evaluator.graham_evaluator import GrahamEvaluator
+from financial_pipeline.ml.financial_clusterer import FinancialClusterer
 
 # ===========================================================================
 # Constant and global variables
@@ -50,10 +52,11 @@ class FinancialDataInterface :
     def run(self):
         st.title("📊 Company Financial Explorer")
 
-        tab1, tab2, tab3 = st.tabs([
+        tab1, tab2, tab3, tab4 = st.tabs([
             "📈 Single Company View", 
             "📊 Compare Companies",
-            "🧠 Graham Evaluation"
+            "🧠 Graham Evaluation",
+            "🔍 Clustering Explorer"
         ])
 
         with tab1:
@@ -64,6 +67,9 @@ class FinancialDataInterface :
         
         with tab3:
             self.display_graham_analysis()
+
+        with tab4:
+            self.display_clustering_analysis()
     # End def run
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -335,6 +341,69 @@ class FinancialDataInterface :
 
         st.plotly_chart(fig, use_container_width=True)
     # End def _heatmap_graham_score
+
+   # Tab 4: Graham Evaluator --------------------------------
+
+    def display_clustering_analysis(self) -> None:
+        st.header("🔍 Company Clustering Explorer")
+
+        clusterer = FinancialClusterer(self.db_path)
+        df_raw = clusterer.load_financial_data()
+
+        if df_raw.empty:
+            st.warning("No financial data available to perform clustering.")
+            return
+
+        # Choose range for K
+        k_range = st.slider("Choose range of clusters to evaluate", 2, 10, (2, 6))
+
+        # Silhouette scores
+        silhouette_scores = {}
+        for k in range(k_range[0], k_range[1] + 1):
+            try:
+                df_temp = clusterer.cluster_companies(df_raw.copy(), k)
+                features = df_temp.drop(columns=["name", "cluster"])
+                scaled = StandardScaler().fit_transform(features)
+                labels = df_temp["cluster"]
+                score = silhouette_score(scaled, labels)
+                silhouette_scores[k] = score
+            except Exception:
+                silhouette_scores[k] = None
+
+        st.subheader("📈 Silhouette Scores")
+        df_scores = pd.DataFrame(list(silhouette_scores.items()), columns=["k", "score"])
+        fig = px.line(df_scores, x="k", y="score", markers=True, title="Silhouette Score by Cluster Count")
+        st.plotly_chart(fig)
+
+        # Select number of clusters to use
+        default_k = max(silhouette_scores, key=lambda x: silhouette_scores[x] if silhouette_scores[x] is not None else -1)
+        selected_k = st.selectbox("Choose number of clusters for visualization", df_scores["k"], index=df_scores["k"].tolist().index(default_k))
+
+        # Perform clustering
+        df_clustered = clusterer.cluster_companies(df_raw.copy(), k=selected_k)
+
+        st.subheader("📊 2D Clustering Visualization (PCA)")
+        features = df_clustered.drop(columns=["name", "cluster"])
+        scaled = StandardScaler().fit_transform(features)
+        pca = PCA(n_components=2)
+        reduced = pca.fit_transform(scaled)
+
+        df_clustered["PC1"] = reduced[:, 0]
+        df_clustered["PC2"] = reduced[:, 1]
+
+        fig = px.scatter(
+            df_clustered,
+            x="PC1",
+            y="PC2",
+            color=df_clustered["cluster"].astype(str),
+            hover_data=["name"],
+            title=f"{selected_k}-Cluster PCA Projection"
+        )
+        st.plotly_chart(fig)
+
+        st.subheader("📋 Cluster Summary")
+        st.dataframe(clusterer.summarize_clusters(df_clustered).round(2))
+    # End def 
 
 
     # def show_raw_data_tab(self, tab) -> pd.DataFrame:

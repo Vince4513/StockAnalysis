@@ -16,7 +16,7 @@ class FinancialClusterer:
         companies = self.db.list_companies()
         rows = []
 
-        for _, name in companies:
+        for _, name, _, _ in companies:
             financials = self.db.get_financials(name)
             if financials:
                 latest = sorted(financials, key=lambda x: x[3])[-1]  # latest year
