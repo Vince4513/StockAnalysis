@@ -3,7 +3,7 @@ import json
 
 from financial_pipeline.importer.financial_data_importer import FinancialDataImporter
 from financial_pipeline.cleaner.financial_data_cleaner import FinancialDataCleaner
-from financial_pipeline.utils.helpers import insert_cleaned_financials
+from financial_pipeline.utils.helpers import insert_cleaned_financials, prevent_sleep, allow_sleep
 
 
 def run(db_path: str | None = None) -> None:
@@ -23,7 +23,10 @@ def run_all(retrieve_data: bool = False, db_path: str | None = None) -> None:
     cleaner = FinancialDataCleaner()
 
     if retrieve_data:
-        importer.retrieve_data()
+        # Usage
+        sleep_blocker = prevent_sleep()
+        importer.retrieve_data(pattern=".PA")
+        allow_sleep(sleep_blocker)
 
     raw_dir = importer.data_path
     json_files = [f for f in os.listdir(raw_dir) if f.endswith(".json")]

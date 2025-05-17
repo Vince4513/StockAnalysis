@@ -1,3 +1,6 @@
+import ctypes
+import platform
+import subprocess
 import pandas as pd
 from typing import List, Dict
 
@@ -54,3 +57,25 @@ def chrono(message: str = "") -> None:
     # now_str = now.strftime("%d-%m-%Y %H:%M:%s")
     print(f"{now} - {message}\n")
 # End def chrono
+
+def prevent_sleep():
+    os_name = platform.system()
+
+    if os_name == "Windows":
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+    elif os_name == "Darwin":
+        # Start caffeinate in background
+        return subprocess.Popen(["caffeinate"])
+    elif os_name == "Linux":
+        # Start systemd-inhibit in background
+        return subprocess.Popen(["systemd-inhibit", "--why=prevent sleep", "--mode=block", "sleep", "infinity"])
+# End def prevent_sleep
+
+def allow_sleep(process=None):
+    os_name = platform.system()
+
+    if os_name == "Windows":
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+    elif process:
+        process.terminate()
+# End def allow_sleep

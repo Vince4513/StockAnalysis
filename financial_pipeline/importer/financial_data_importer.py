@@ -42,7 +42,7 @@ class FinancialDataImporter:
     # Public methods
     # ===========================================================================
 
-    def retrieve_tickers(self) -> List[str]:
+    def retrieve_tickers(self, pattern: str = None) -> List[str]:
         """Load tickers from file or return a fallback list."""
         if not os.path.exists(self.ticker_source):
             logger.info(f"[!] Ticker file not found: {self.ticker_source}")
@@ -50,21 +50,26 @@ class FinancialDataImporter:
         
         data = self._read_dict_from_file(self.ticker_source)
         tickers = list(data.keys()) if data else []
+        
+        if pattern is not None:
+            tickers = [t for t in tickers if pattern in t]
+
         logger.info(f"[+] Retrieved {len(tickers)} tickers")
         return tickers
     # End def retrieve_tickers
                 
-    def retrieve_data(self, tickers: List[str] = None):
+    def retrieve_data(self, tickers: List[str] = None, pattern: str = None):
         """Sequential download of financials."""
-        tickers = tickers or self.retrieve_tickers()
+        tickers = tickers or self.retrieve_tickers(pattern=pattern)
 
         for ticker in tqdm(tickers):
             self._fetch_ticker_data(ticker)
     # End def retrieve_data
 
-    def parallel_retrieve_data(self, tickers: List[str] = None, max_workers=2):
+    def parallel_retrieve_data(self, tickers: List[str] = None, pattern: str = None, max_workers=2):
         """Parallel download using threads."""
-        tickers = tickers or self.retrieve_tickers()
+        tickers = tickers or self.retrieve_tickers(pattern=pattern)
+        
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             executor.map(self._fetch_ticker_data, tickers)
     # End def parallel_retrieve_data

@@ -11,5 +11,5 @@ def run_streamlit_app(db_path: str | None = None):
     interface.run()
 
 if __name__ == "__main__":
-    # db_path = "data/processed/production.db"
-    run_streamlit_app(db_path=None)
+    db_path = "data/processed/production.db"
+    run_streamlit_app(db_path=db_path)
